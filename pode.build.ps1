@@ -501,6 +501,39 @@ function Invoke-PodeBuildDotnetBuild {
     }
 }
 
+
+
+
+function Invoke-PodeBuildDotnetMonitorSrvBuild() {
+    # Retrieve the highest installed SDK version
+    $majorVersion = ([version](dotnet --version)).Major
+
+    # Determine if the target framework is compatible
+    $isCompatible = $majorVersion -ge 8
+
+    # Skip build if not compatible
+    if ($isCompatible) {
+        Write-Host "SDK for target framework $target is compatible with the installed SDKs"
+    }
+    else {
+        Write-Host "SDK for target framework $target is not compatible with the installed SDKs. Skipping build."
+        return
+    }
+    if ($Version) {
+        Write-Host "Assembly Version $Version"
+        $AssemblyVersion = "-p:Version=$Version"
+    }
+    else {
+        $AssemblyVersion = ''
+    }
+
+    dotnet publish --configuration Release  $AssemblyVersion --output ../Bin/$target
+    if (!$?) {
+        throw "dotnet publish failed for $($target)"
+    }
+
+}
+
 <#
 .SYNOPSIS
     Retrieves the end-of-life (EOL) and supported versions of PowerShell.
@@ -1099,6 +1132,21 @@ Add-BuildTask Build BuildDeps, {
     finally {
         Pop-Location
     }
+
+
+    if (Test-Path ./src/Bin) {
+        Remove-Item -Path ./src/Bin -Recurse -Force | Out-Null
+    }
+
+    try {
+        Push-Location ./src/PodePwshMonitor
+        Invoke-PodeBuildDotnetMonitorSrvBuild
+    }
+    finally {
+        Pop-Location
+    }
+
+
 
 }
 
