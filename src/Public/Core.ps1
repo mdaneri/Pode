@@ -224,6 +224,23 @@ function Start-PodeServer {
         $Script:PodeContext = $null
         $ShowDoneMessage = $true
 
+        # check if podeWatchdog is configured
+        if ($PodeService) {
+            if ($null -ne $PodeService.DisableTermination -or
+                $null -ne $PodeService.Quiet -or
+                $null -ne $PodeService.PipeName
+            ) {
+                $DisableTermination = [switch]$PodeService.DisableTermination
+                $Quiet = [switch]$PodeService.Quiet
+
+                $monitorService = @{
+                    DisableTermination = $PodeService.DisableTermination
+                    Quiet              = $PodeService.Quiet
+                    PipeName           = $PodeService.PipeName
+                }
+            }
+        }
+
         try {
             # if we have a filepath, resolve it - and extract a root path from it
             if ($PSCmdlet.ParameterSetName -ieq 'file') {
@@ -260,6 +277,7 @@ function Start-PodeServer {
                 Console              = Get-PodeDefaultConsole
                 EnableBreakpoints    = $EnableBreakpoints
                 IgnoreServerConfig   = $IgnoreServerConfig
+                Service              = $monitorService
             }
 
 
@@ -293,7 +311,7 @@ function Start-PodeServer {
                 $PodeContext.Server.Console.DisableConsoleInput = $true
                 $PodeContext.Server.Console.DisableTermination = $true
             }
-            
+
             # start the file monitor for interally restarting
             Start-PodeFileMonitor
 
