@@ -1229,7 +1229,7 @@ Add-BuildTask PackageFolder Build, {
     New-Item -Path $path -ItemType Directory -Force | Out-Null
 
     # which source folders do we need? create them and copy their contents
-    $folders = @('Private', 'Public', 'Misc', 'Libs', 'Locales')
+    $folders = @('Private', 'Public', 'Misc', 'Libs', 'Locales', 'Bin')
     $folders | ForEach-Object {
         New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
         Copy-Item -Path "./src/$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
@@ -1426,6 +1426,12 @@ Add-BuildTask CleanPkg {
 # Synopsis: Clean the libs folder
 Add-BuildTask CleanLibs {
     $path = './src/Libs'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host "Removing $path  contents"
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+
+    $path = './src/Bin'
     if (Test-Path -Path $path -PathType Container) {
         Write-Host "Removing $path  contents"
         Remove-Item -Path $path -Recurse -Force | Out-Null
