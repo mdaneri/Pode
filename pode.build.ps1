@@ -527,9 +527,36 @@ function Invoke-PodeBuildDotnetMonitorSrvBuild() {
         $AssemblyVersion = ''
     }
 
-    dotnet publish --configuration Release  $AssemblyVersion --output ../Bin/$target
-    if (!$?) {
-        throw "dotnet publish failed for $($target)"
+    foreach ($target in @('win-x64','win-arm64' ,'linux-x64','linux-arm64', 'osx-x64', 'osx-arm64')) {
+        dotnet publish --configuration Release  $AssemblyVersion --runtime $target --output ../Bin/$target
+        if (!$?) {
+            throw "dotnet publish failed for $($target)"
+        }
+    }
+
+    # Check if 'lipo' exists
+    $lipoExists = Get-Command lipo -ErrorAction SilentlyContinue
+
+    if ($lipoExists) {
+        # Define the paths for the x64 and arm64 binaries and the universal output
+        $osxX64Path = '../Bin/osx-x64/PodeMonitor'
+        $osxArm64Path = '../Bin/osx-arm64/PodeMonitor'
+        $universalPath = '../Bin/osx-universal/PodeMonitor'
+        # Run 'lipo' to combine x64 and arm64 binaries into a universal binary
+        $lipoCommand = "lipo -create $osxX64Path $osxArm64Path -output $universalPath"
+        Write-Host 'Running lipo to create universal binary...'
+
+        # Run the lipo command
+        try {
+            Invoke-Expression $lipoCommand
+            Write-Host "Universal binary created at: $universalPath"
+        }
+        catch {
+            Write-Host "Failed to create universal binary: $_"
+        }
+    }
+    else {
+        Write-Host "'lipo' not found. Please install 'lipo' to create a universal binary."
     }
 
 }
@@ -991,7 +1018,14 @@ Add-BuildTask PrintChecksum {
 Add-BuildTask ChocoDeps -If (Test-PodeBuildIsWindows) {
     if (!(Test-PodeBuildCommand 'choco')) {
         Set-ExecutionPolicy Bypass -Scope Process -Force
-        Invoke-Expression ([System.Net.WebClient]::new().DownloadString('https://chocolatey.org/install.ps1'))
+        Invoke-Expression (([System.Net.WebClient]::new()).DownloadString('https://chocolatey.org/install.ps1'))
+    }
+}
+
+# Synopsis: Install dependencies for packaging
+Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
+    if (!(Test-PodeBuildCommand '7z')) {
+        Invoke-PodeBuildInstall '7zip' $Versions.SevenZip
     }
 }
 
