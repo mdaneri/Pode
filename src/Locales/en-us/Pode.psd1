@@ -311,4 +311,9 @@
     totalUptimeMessage                                                = 'Total Uptime:'
     uptimeSinceLastRestartMessage                                     = 'Uptime Since Last Restart:'
     totalRestartMessage                                               = 'Total Number of Restarts:'
+    serviceAlreadyRegisteredException                                 = "Service '{0}' is already registered."
+    serviceNotRegisteredException                                     = "Service '{0}' is not registered."
+    serviceRegistrationException                                      = "Service '{0}' is not registered."
+    serviceRegistrationFailedException                                = "Service '{0}' registration failed."
+    serviceIsRunningException                                         = "Service '{0}' is running. Use the -Force parameter to forcefully stop."
 }

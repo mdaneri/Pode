@@ -311,4 +311,9 @@
     totalUptimeMessage                                                = 'Całkowity czas działania:'
     uptimeSinceLastRestartMessage                                     = 'Czas działania od ostatniego restartu:'
     totalRestartMessage                                               = 'Całkowita liczba restartów:'
+    serviceAlreadyRegisteredException                                 = "Usługa '{0}' jest już zarejestrowana."
+    serviceNotRegisteredException                                     = "Usługa '{0}' nie jest zarejestrowana."
+    serviceRegistrationException                                      = "Usługa '{0}' nie jest zarejestrowana."
+    serviceRegistrationFailedException                                = "Rejestracja usługi '{0}' nie powiodła się."
+    serviceIsRunningException                                         = "Usługa '{0}' jest uruchomiona. Użyj parametru -Force, aby wymusić zatrzymanie."
 }

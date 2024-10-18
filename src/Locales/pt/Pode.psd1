@@ -311,4 +311,9 @@
     totalUptimeMessage                                                = 'Tempo total de atividade:'
     uptimeSinceLastRestartMessage                                     = 'Tempo de atividade desde o último reinício:'
     totalRestartMessage                                               = 'Número total de reinicializações:'
+    serviceAlreadyRegisteredException                                 = "O serviço '{0}' já está registrado."
+    serviceNotRegisteredException                                     = "O serviço '{0}' não está registrado."
+    serviceRegistrationException                                      = "O serviço '{0}' não está registrado."
+    serviceRegistrationFailedException                                = "Falha no registro do serviço '{0}'."
+    serviceIsRunningException                                         = "O serviço '{0}' está em execução. Use o parâmetro -Force para forçar a parada."
 }

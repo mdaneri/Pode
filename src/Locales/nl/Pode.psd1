@@ -311,4 +311,9 @@
     totalUptimeMessage                                                = 'Totale uptime:'
     uptimeSinceLastRestartMessage                                     = 'Uptime sinds laatste herstart:'
     totalRestartMessage                                               = 'Totaal aantal herstarts:'
+    serviceAlreadyRegisteredException                                 = "De service '{0}' is al geregistreerd."
+    serviceNotRegisteredException                                     = "De service '{0}' is niet geregistreerd."
+    serviceRegistrationException                                      = "De service '{0}' is niet geregistreerd."
+    serviceRegistrationFailedException                                = "Registratie van de service '{0}' is mislukt."
+    serviceIsRunningException                                         = "De service '{0}' draait. Gebruik de parameter -Force om de service geforceerd te stoppen."
 }

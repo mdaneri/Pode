@@ -311,4 +311,9 @@
     totalUptimeMessage                                                = '総稼働時間:'
     uptimeSinceLastRestartMessage                                     = '最後の再起動からの稼働時間:'
     totalRestartMessage                                               = '再起動の総数:'
+    serviceAlreadyRegisteredException                                 = "サービス '{0}' はすでに登録されています。"
+    serviceNotRegisteredException                                     = "サービス '{0}' は登録されていません。"
+    serviceRegistrationException                                      = "サービス '{0}' は登録されていません。"
+    serviceRegistrationFailedException                                = "サービス '{0}' の登録に失敗しました。"
+    serviceIsRunningException                                         = "サービス '{0}' が実行中です。強制的に停止するには、-Force パラメーターを使用してください。"
 }
