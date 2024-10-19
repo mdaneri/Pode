@@ -312,8 +312,9 @@
     uptimeSinceLastRestartMessage                                     = 'Tiempo de actividad desde el último reinicio:'
     totalRestartMessage                                               = 'Número total de reinicios:'
     serviceAlreadyRegisteredException                                 = "El servicio '{0}' ya está registrado."
-    serviceNotRegisteredException                                     = "El servicio '{0}' no está registrado."
-    serviceRegistrationException                                      = "El servicio '{0}' no está registrado."
-    serviceRegistrationFailedException                                = "Falló el registro del servicio '{0}'."
+    serviceIsNotRegisteredException                                   = "El servicio '{0}' no está registrado."
+    serviceCommandFailedException                                     = "El comando del servicio '{0}' falló en el servicio '{1}'."
+    serviceRegistrationException                                      = "Falló el registro del servicio '{0}'."
     serviceIsRunningException                                         = "El servicio '{0}' está en ejecución. Utilice el parámetro -Force para detenerlo a la fuerza."
+    serviceUnRegistrationException                                    = "La anulación del registro del servicio '{0}' falló."
 }

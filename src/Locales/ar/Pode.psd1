@@ -312,8 +312,9 @@
     uptimeSinceLastRestartMessage                                     = 'وقت التشغيل منذ آخر إعادة تشغيل:'
     totalRestartMessage                                               = 'إجمالي عدد عمليات إعادة التشغيل:'
     serviceAlreadyRegisteredException                                 = "الخدمة '{0}' مسجلة بالفعل."
-    serviceNotRegisteredException                                     = "الخدمة '{0}' غير مسجلة."
-    serviceRegistrationException                                      = "الخدمة '{0}' غير مسجلة."
-    serviceRegistrationFailedException                                = "فشل تسجيل الخدمة '{0}'."
+    serviceIsNotRegisteredException                                   = "الخدمة '{0}' غير مسجلة."
+    serviceCommandFailedException                                     = "فشل الأمر '{0}' في الخدمة '{1}'."
+    serviceRegistrationException                                      = "فشل تسجيل الخدمة '{0}'."
     serviceIsRunningException                                         = "الخدمة '{0}' تعمل. استخدم المعامل -Force للإيقاف بالقوة."
+    serviceUnRegistrationException                                    = "فشل إلغاء تسجيل الخدمة '{0}'."
 }
