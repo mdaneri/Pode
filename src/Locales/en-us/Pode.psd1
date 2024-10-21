@@ -312,9 +312,9 @@
     uptimeSinceLastRestartMessage                                     = 'Uptime Since Last Restart:'
     totalRestartMessage                                               = 'Total Number of Restarts:'
     serviceAlreadyRegisteredException                                 = "Service '{0}' is already registered."
-    serviceIsNotRegisteredException                                      = "Service '{0}' is not registered."
+    serviceIsNotRegisteredException                                   = "Service '{0}' is not registered."
     serviceCommandFailedException                                     = "Service command '{0}' failed on service '{1}'."
-    serviceRegistrationException                                = "Service '{0}' registration failed."
+    serviceRegistrationException                                      = "Service '{0}' registration failed."
     serviceIsRunningException                                         = "Service '{0}' is running. Use the -Force parameter to forcefully stop."
     serviceUnRegistrationException                                    = "Service '{0}' unregistration failed."
 }
