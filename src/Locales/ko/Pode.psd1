@@ -312,9 +312,10 @@
     uptimeSinceLastRestartMessage                                     = '마지막 재시작 이후 가동 시간:'
     totalRestartMessage                                               = '총 재시작 횟수:'
     serviceAlreadyRegisteredException                                 = "서비스 '{0}'가 이미 등록되었습니다."
-    serviceIsNotRegisteredException                                      = "서비스 '{0}'가 등록되지 않았습니다."
+    serviceIsNotRegisteredException                                   = "서비스 '{0}'가 등록되지 않았습니다."
     serviceCommandFailedException                                     = "서비스 명령 '{0}' 이(가) 서비스 '{1}' 에서 실패했습니다."
-    serviceRegistrationException                                = "서비스 '{0}' 등록에 실패했습니다."
+    serviceRegistrationException                                      = "서비스 '{0}' 등록에 실패했습니다."
     serviceIsRunningException                                         = "서비스 '{0}'가 실행 중입니다. 강제로 중지하려면 -Force 매개변수를 사용하세요."
     serviceUnRegistrationException                                    = "서비스 '{0}' 등록 취소에 실패했습니다."
+    passwordRequiredForServiceUserException                           = "Windows에서 서비스 사용자를 지정할 때는 비밀번호가 필요합니다. 사용자 '{0}'에 대해 유효한 비밀번호를 입력하세요."
 }

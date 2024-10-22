@@ -312,9 +312,10 @@
     uptimeSinceLastRestartMessage                                     = '自上次重启后的运行时间:'
     totalRestartMessage                                               = '重启总次数:'
     serviceAlreadyRegisteredException                                 = "服务 '{0}' 已经注册。"
-    serviceIsNotRegisteredException                                      = "服务 '{0}' 未注册。"
+    serviceIsNotRegisteredException                                   = "服务 '{0}' 未注册。"
     serviceCommandFailedException                                     = "服务命令 '{0}' 在服务 '{1}' 上失败。"
-    serviceRegistrationException                                = "服务 '{0}' 注册失败。"
+    serviceRegistrationException                                      = "服务 '{0}' 注册失败。"
     serviceIsRunningException                                         = "服务 '{0}' 正在运行。使用 -Force 参数强制停止。"
     serviceUnRegistrationException                                    = "服务 '{0}' 的注销失败。"
+    passwordRequiredForServiceUserException                           = "在 Windows 中指定服务用户时需要密码。请为用户 '{0}' 提供有效的密码。"
 }

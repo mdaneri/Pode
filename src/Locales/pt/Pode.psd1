@@ -312,9 +312,10 @@
     uptimeSinceLastRestartMessage                                     = 'Tempo de atividade desde o último reinício:'
     totalRestartMessage                                               = 'Número total de reinicializações:'
     serviceAlreadyRegisteredException                                 = "O serviço '{0}' já está registrado."
-    serviceIsNotRegisteredException                                      = "O serviço '{0}' não está registrado."
+    serviceIsNotRegisteredException                                   = "O serviço '{0}' não está registrado."
     serviceCommandFailedException                                     = "O comando do serviço '{0}' falhou no serviço '{1}'."
-    serviceRegistrationException                                = "Falha no registro do serviço '{0}'."
+    serviceRegistrationException                                      = "Falha no registro do serviço '{0}'."
     serviceIsRunningException                                         = "O serviço '{0}' está em execução. Use o parâmetro -Force para forçar a parada."
     serviceUnRegistrationException                                    = "A anulação do registro do serviço '{0}' falhou."
+    passwordRequiredForServiceUserException                           = "Uma senha é necessária ao especificar um usuário de serviço no Windows. Por favor, forneça uma senha válida para o usuário '{0}'."
 }

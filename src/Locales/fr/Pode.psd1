@@ -317,4 +317,5 @@
     totalUptimeMessage                                                = 'Temps de fonctionnement total :'
     uptimeSinceLastRestartMessage                                     = 'Temps de fonctionnement depuis le dernier redémarrage :'
     totalRestartMessage                                               = 'Nombre total de redémarrages :'
+    passwordRequiredForServiceUserException                           = "Un mot de passe est requis lors de la spécification d'un utilisateur de service sous Windows. Veuillez fournir un mot de passe valide pour l'utilisateur '{0}'."
 }

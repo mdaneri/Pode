@@ -312,9 +312,10 @@
     uptimeSinceLastRestartMessage                                     = '最後の再起動からの稼働時間:'
     totalRestartMessage                                               = '再起動の総数:'
     serviceAlreadyRegisteredException                                 = "サービス '{0}' はすでに登録されています。"
-    serviceIsNotRegisteredException                                      = "サービス '{0}' は登録されていません。"
+    serviceIsNotRegisteredException                                   = "サービス '{0}' は登録されていません。"
     serviceCommandFailedException                                     = "サービスコマンド '{0}' はサービス '{1}' で失敗しました。"
-    serviceRegistrationException                                = "サービス '{0}' の登録に失敗しました。"
+    serviceRegistrationException                                      = "サービス '{0}' の登録に失敗しました。"
     serviceIsRunningException                                         = "サービス '{0}' が実行中です。強制的に停止するには、-Force パラメーターを使用してください。"
     serviceUnRegistrationException                                    = "サービス '{0}' の登録解除に失敗しました。"
+    passwordRequiredForServiceUserException                           = "Windowsでサービスユーザーを指定する際にはパスワードが必要です。ユーザー '{0}' に有効なパスワードを入力してください。"
 }
