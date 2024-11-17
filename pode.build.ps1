@@ -528,7 +528,11 @@ function Invoke-PodeBuildDotnetMonitorSrvBuild() {
     }
 
     foreach ($target in @('win-x64','win-arm64' ,'linux-x64','linux-arm64', 'osx-x64', 'osx-arm64')) {
-        dotnet publish --configuration Release  $AssemblyVersion --runtime $target --output ../Bin/$target
+        $DefineConstants = ''
+        if ($target -like 'win-*') {
+            $DefineConstants = '-p:DefineConstants="WINDOWS"'
+        }
+        dotnet publish --runtime $target --output ../Bin/$target --configuration Release $AssemblyVersion "$DefineConstants"
         if (!$?) {
             throw "dotnet publish failed for $($target)"
         }
