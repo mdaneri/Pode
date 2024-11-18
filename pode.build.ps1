@@ -526,13 +526,20 @@ function Invoke-PodeBuildDotnetMonitorSrvBuild() {
     else {
         $AssemblyVersion = ''
     }
+    foreach ($target in @('win-x64', 'win-arm64' , 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64')) {
+        $DefineConstants = @()
+        $ParamConstants = ''
 
-    foreach ($target in @('win-x64','win-arm64' ,'linux-x64','linux-arm64', 'osx-x64', 'osx-arm64')) {
-        $DefineConstants = ''
-        if ($target -like 'win-*') {
-            $DefineConstants = '-p:DefineConstants="WINDOWS"'
+        if (!$DisableSuspendSupport) {
+            $DefineConstants += 'ENABLE_LIFECYCLE_OPERATIONS'
         }
-        dotnet publish --runtime $target --output ../Bin/$target --configuration Release $AssemblyVersion "$DefineConstants"
+
+        if ($DefineConstants.Count -gt 0) {
+            $ParamConstants = "-p:DefineConstants=`"$( $DefineConstants -join ';')`""
+        }
+
+        dotnet publish --runtime $target --output ../Bin/$target --configuration Release $AssemblyVersion $ParamConstants
+
         if (!$?) {
             throw "dotnet publish failed for $($target)"
         }
