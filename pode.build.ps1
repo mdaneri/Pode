@@ -103,6 +103,9 @@ param(
     [string]
     $UICulture = 'en-US',
 
+    [switch]
+    $DisableLifecycleServiceOperations,
+
     [string[]]
     [ValidateSet('netstandard2.0', 'net8.0', 'net9.0', 'net10.0')]
     $TargetFrameworks = @('netstandard2.0', 'net8.0', 'net9.0'),
@@ -530,7 +533,7 @@ function Invoke-PodeBuildDotnetMonitorSrvBuild() {
         $DefineConstants = @()
         $ParamConstants = ''
 
-        if (!$DisableSuspendSupport) {
+        if (!$DisableLifecycleServiceOperations) {
             $DefineConstants += 'ENABLE_LIFECYCLE_OPERATIONS'
         }
 
