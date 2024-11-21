@@ -67,8 +67,6 @@ function Start-PodeInternalServer {
             # start runspace for loggers
             Start-PodeLoggingRunspace
 
-            Start-PodeServiceHearthbeat
-
             # start runspace for schedules
             Start-PodeScheduleRunspace
 
@@ -154,6 +152,9 @@ function Start-PodeInternalServer {
         Invoke-PodeEvent -Type Running
 
         Show-PodeConsoleInfo
+
+        # Start Service Monitor
+        Start-PodeServiceHearthbeat
 
     }
     catch {
@@ -304,6 +305,11 @@ function Restart-PodeInternalServer {
         }
 
         Start-PodeInternalServer
+
+        # recreate the session tokens
+
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
+        $PodeContext.Tokens.Restart = [System.Threading.CancellationTokenSource]::new()
     }
     catch {
         $_ | Write-PodeErrorLog
