@@ -3972,7 +3972,7 @@ function Test-PodeAdminPrivilege {
             # Retrieve the current Windows identity and token
             $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
             $principal = [Security.Principal.WindowsPrincipal]::new($identity)
-            
+
             if ($null -eq $principal) {
                 return $false
             }
@@ -3983,7 +3983,7 @@ function Test-PodeAdminPrivilege {
             }
 
             # Check if the token is elevated
-            if ($identity.IsSystem || $identity.IsAuthenticated -and $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+            if ($identity.IsSystem -or $identity.IsAuthenticated -and $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
                 return $true
             }
 
