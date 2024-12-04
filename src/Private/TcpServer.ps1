@@ -42,7 +42,7 @@ function Start-PodeTcpServer {
     }
 
     # create the listener
-    $listener = [PodeListener]::new($PodeContext.Tokens.Cancellation.Token)
+    $listener = New-PodeListener -CancellationToken $PodeContext.Tokens.Cancellation.Token -SuspensionToken $PodeContext.Tokens.Suspension.Token
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
@@ -88,7 +88,7 @@ function Start-PodeTcpServer {
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 # get email
-                $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
+                $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.CombinedToken.Token))
 
                 try {
                     try {

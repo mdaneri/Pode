@@ -166,7 +166,7 @@ namespace Pode
 
             // stream response output
             var buffer = Encoding.GetBytes(BuildHeaders(Headers));
-            await Request.InputStream.WriteAsync(buffer, 0, buffer.Length, Context.Listener.CancellationToken).ConfigureAwait(false);
+            await Request.InputStream.WriteAsync(buffer, 0, buffer.Length, Context.Listener.CombinedToken).ConfigureAwait(false);
             buffer = default;
             SentHeaders = true;
         }
@@ -181,7 +181,7 @@ namespace Pode
             // stream response output
             if (!timeout && OutputStream.Length > 0)
             {
-                await Task.Run(() => OutputStream.WriteTo(Request.InputStream), Context.Listener.CancellationToken).ConfigureAwait(false);
+                await Task.Run(() => OutputStream.WriteTo(Request.InputStream), Context.Listener.CombinedToken).ConfigureAwait(false);
             }
 
             SentBody = true;
@@ -352,9 +352,9 @@ namespace Pode
             try
             {
 #if NETCOREAPP2_1_OR_GREATER
-                await Request.InputStream.WriteAsync(buffer.AsMemory(), Context.Listener.CancellationToken).ConfigureAwait(false);
+                await Request.InputStream.WriteAsync(buffer.AsMemory(), Context.Listener.CombinedToken).ConfigureAwait(false);
 #else
-                await Request.InputStream.WriteAsync(buffer, 0, buffer.Length, Context.Listener.CancellationToken).ConfigureAwait(false);
+                await Request.InputStream.WriteAsync(buffer, 0, buffer.Length, Context.Listener.CombinedToken).ConfigureAwait(false);
 #endif
 
                 if (flush)

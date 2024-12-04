@@ -123,7 +123,7 @@ namespace Pode
             foreach (var ep in Endpoints)
             {
                 // Start each endpoint in a new task, running asynchronously.
-                _ = Task.Run(() => StartEndpoint(ep), Listener.CancellationToken);
+                _ = Task.Run(() => StartEndpoint(ep), Listener.CombinedToken);
             }
         }
 
@@ -134,7 +134,7 @@ namespace Pode
         private void StartEndpoint(PodeEndpoint endpoint)
         {
             // Exit if the endpoint is disposed or if cancellation is requested.
-            if (endpoint.IsDisposed || Listener.CancellationToken.IsCancellationRequested)
+            if (endpoint.IsDisposed || Listener.CombinedToken.IsCancellationRequested)
             {
                 return;
             }
@@ -205,7 +205,7 @@ namespace Pode
             try
             {
                 // Run the receive operation asynchronously in a new task.
-                _ = Task.Run(async () => await context.Receive().ConfigureAwait(false), Listener.CancellationToken);
+                _ = Task.Run(async () => await context.Receive().ConfigureAwait(false), Listener.CombinedToken);
             }
             catch (OperationCanceledException ex)
             {
@@ -264,7 +264,7 @@ namespace Pode
                 // Start receiving data from the accepted connection.
                 try
                 {
-                    _ = Task.Run(async () => await StartReceive(accepted), Listener.CancellationToken).ConfigureAwait(false);
+                    _ = Task.Run(async () => await StartReceive(accepted), Listener.CombinedToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException ex)
                 {

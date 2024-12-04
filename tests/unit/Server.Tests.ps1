@@ -114,6 +114,8 @@ Describe 'Restart-PodeInternalServer' {
             Tokens    = @{
                 Cancellation = [System.Threading.CancellationTokenSource]::new()
                 Restart      = [System.Threading.CancellationTokenSource]::new()
+                Dump         = [System.Threading.CancellationTokenSource]::new()
+                Suspension   = [System.Threading.CancellationTokenSource]::new()
             }
             Server    = @{
                 Routes          = @{

@@ -11,7 +11,7 @@ function New-PodeFileWatcher {
     [CmdletBinding()]
     [OutputType([PodeWatcher])]
     param()
-    $watcher = [PodeWatcher]::new($PodeContext.Tokens.Cancellation.Token)
+    $watcher = [PodeWatcher]::new($PodeContext.Tokens.CombinedToken.Token)
     $watcher.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $watcher.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     return $watcher
@@ -63,7 +63,7 @@ function Start-PodeFileWatcherRunspace {
 
         try {
             while ($Watcher.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-                $evt = (Wait-PodeTask -Task $Watcher.GetFileEventAsync($PodeContext.Tokens.Cancellation.Token))
+                $evt = (Wait-PodeTask -Task $Watcher.GetFileEventAsync($PodeContext.Tokens.CombinedToken.Token))
 
                 try {
                     try {

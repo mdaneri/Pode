@@ -49,8 +49,8 @@ namespace Pode
             WebSocket = new ClientWebSocket();
             WebSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(60);
 
-            await WebSocket.ConnectAsync(URL, Receiver.CancellationToken).ConfigureAwait(false);
-            await Task.Factory.StartNew(Receive, Receiver.CancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default).ConfigureAwait(false);
+            await WebSocket.ConnectAsync(URL, Receiver.CombinedToken).ConfigureAwait(false);
+            await Task.Factory.StartNew(Receive, Receiver.CombinedToken, TaskCreationOptions.LongRunning, TaskScheduler.Default).ConfigureAwait(false);
         }
 
         public async Task Reconnect(string url)
@@ -72,11 +72,11 @@ namespace Pode
 
             try
             {
-                while (!Receiver.CancellationToken.IsCancellationRequested && IsConnected)
+                while (!Receiver.CombinedToken.IsCancellationRequested && IsConnected)
                 {
                     do
                     {
-                        result = await WebSocket.ReceiveAsync(buffer, Receiver.CancellationToken).ConfigureAwait(false);
+                        result = await WebSocket.ReceiveAsync(buffer, Receiver.CombinedToken).ConfigureAwait(false);
                         if (result.MessageType != WebSocketMessageType.Close)
                         {
                             bufferStream.Write(buffer.ToArray(), 0, result.Count);
@@ -127,7 +127,7 @@ namespace Pode
                 return;
             }
 
-            await WebSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(message)), type, true, Receiver.CancellationToken).ConfigureAwait(false);
+            await WebSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(message)), type, true, Receiver.CombinedToken).ConfigureAwait(false);
         }
 
         public async Task Disconnect(PodeWebSocketCloseFrom closeFrom)

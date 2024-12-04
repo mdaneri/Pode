@@ -329,12 +329,11 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.Types = @()
 
         # recreate the session tokens
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
-        $PodeContext.Tokens.Cancellation = [System.Threading.CancellationTokenSource]::new()
-
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
-        $PodeContext.Tokens.Restart = [System.Threading.CancellationTokenSource]::new()
-
+        Reset-PodeCancellationToken -Type Cancellation
+        Reset-PodeCancellationToken -Type Restart
+        Reset-PodeCancellationToken -Type Dump
+        Reset-PodeCancellationToken -Type Suspension
+        Reset-PodeCancellationToken -Type Resume
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
 
@@ -351,6 +350,73 @@ function Restart-PodeInternalServer {
     }
 }
 
+
+<#
+.SYNOPSIS
+    Resets the cancellation token for a specific type in Pode.
+
+.DESCRIPTION
+    The `Reset-PodeCancellationToken` function disposes of the existing cancellation token
+    for the specified type and reinitializes it with a new token. This ensures proper cleanup
+    of disposable resources associated with the cancellation token.
+
+.PARAMETER Type
+    The type of cancellation token to reset. This is a mandatory parameter and must be
+    provided as a string.
+
+.EXAMPLES
+    # Reset the cancellation token for the 'Cancellation' type
+    Reset-PodeCancellationToken -Type Cancellation
+
+    # Reset the cancellation token for the 'Restart' type
+    Reset-PodeCancellationToken -Type Restart
+
+    # Reset the cancellation token for the 'Dump' type
+    Reset-PodeCancellationToken -Type Dump
+
+    # Reset the cancellation token for the 'Suspension' type
+    Reset-PodeCancellationToken -Type Suspension
+
+.NOTES
+    This function is used to manage cancellation tokens in Pode's internal context.
+
+#>
+function Reset-PodeCancellationToken {
+    param(
+        [Parameter(Mandatory = $true)]
+        [validateset( 'Cancellation' , 'Restart', 'Dump', 'Suspension', 'Resume' )]
+        [string]
+        $Type
+    )
+    # Ensure cleanup of disposable tokens
+    Close-PodeDisposable -Disposable $PodeContext.Tokens[$Type]
+
+    # Reinitialize the Token
+    $PodeContext.Tokens[$Type] = [System.Threading.CancellationTokenSource]::new()
+}
+
+
+<#
+.SYNOPSIS
+    Determines whether the Pode server should remain open based on its configuration and active components.
+
+.DESCRIPTION
+    The `Test-PodeServerKeepOpen` function evaluates the current server state and configuration
+    to decide whether to keep the Pode server running. It considers the existence of timers,
+    schedules, file watchers, service mode, and server types to make this determination.
+
+    - If any timers, schedules, or file watchers are active, the server remains open.
+    - If the server is not running as a service and is either serverless or has no types defined,
+      the server will close.
+    - In other cases, the server will stay open.
+
+ .NOTES
+    This function is primarily used internally by Pode to manage the server lifecycle.
+    It helps ensure the server remains active only when necessary based on its current state.
+
+
+#>
+
 function Test-PodeServerKeepOpen {
     # if we have any timers/schedules/fim - keep open
     if ((Test-PodeTimersExist) -or (Test-PodeSchedulesExist) -or (Test-PodeFileWatchersExist)) {
@@ -364,4 +430,139 @@ function Test-PodeServerKeepOpen {
 
     # keep server open
     return $true
+}
+
+<#
+.SYNOPSIS
+    Suspends the Pode server and its runspaces.
+
+.DESCRIPTION
+    This function suspends the Pode server by pausing all associated runspaces and ensuring they enter a debug state.
+    It triggers the 'Suspend' event, updates the server's suspended status, and provides feedback during the suspension process.
+
+.PARAMETER Timeout
+    The maximum time, in seconds, to wait for each runspace to be suspended before timing out. Default is 30 seconds.
+
+.EXAMPLE
+    Suspend-PodeServerInternal -Timeout 60
+    # Suspends the Pode server with a timeout of 60 seconds.
+
+.NOTES
+    This is an internal function used within the Pode framework.
+    It may change in future releases.
+
+#>
+function Suspend-PodeServerInternal {
+    param(
+        [int]
+        $Timeout = 30
+    )
+    try {
+        # Inform user that the server is suspending
+        Write-PodeHost $PodeLocale.SuspendingMessage -ForegroundColor Yellow
+
+        # Trigger the Suspend event
+        Invoke-PodeEvent -Type Suspend
+
+        # Update the server's suspended state
+        $PodeContext.Server.Suspended = $true
+
+        # Retrieve all runspaces related to Pode ordered by name so the Main runspace are the first to be suspended (To avoid the process hunging)
+        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_*' -and `
+                $_.Name -notlike '*__pode_session_inmem_cleanup__*' } | Sort-Object Name
+
+        foreach ($runspace in $runspaces) {
+            try {
+                # Attach debugger to the runspace
+                $debugger = [Pode.Embedded.DebuggerHandler]::new($Runspace)
+
+                # Enable debugging and pause execution
+                Enable-RunspaceDebug -BreakAll -Runspace $runspace
+
+                # Inform user about the suspension process for the current runspace
+                Write-PodeHost "Waiting for $($runspace.Name) to be suspended." -NoNewLine -ForegroundColor Yellow
+
+                # Suspend the runspace
+                Suspend-PodeRunspace -Runspace $Runspace
+            }
+            finally {
+                # Detach the debugger from the runspace to clean up resources and prevent any lingering event handlers.
+                if ($null -ne $debugger) {
+                    $debugger.Dispose()
+                }
+            }
+        }
+
+        # Short pause before refreshing the console
+        Start-Sleep -Seconds 5
+
+        # Clear the host and display header information
+        Show-PodeConsoleInfo -ShowHeader
+    }
+    catch {
+        # Log any errors that occur
+        $_ | Write-PodeErrorLog
+    }
+    finally {
+        Reset-PodeCancellationToken -Type Suspension
+
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Resumes the Pode server from a suspended state.
+
+.DESCRIPTION
+    This function resumes the Pode server, ensuring all associated runspaces are restored to their normal execution state.
+    It triggers the 'Resume' event, updates the server's suspended status, and clears the host for a refreshed console view.
+
+.NOTES
+    This is an internal function used within the Pode framework.
+    It may change in future releases.
+
+.EXAMPLE
+    Resume-PodeServerInternal
+    # Resumes the Pode server after a suspension.
+
+#>
+function Resume-PodeServerInternal {
+    try {
+        # Inform user that the server is resuming
+        Write-PodeHost $PodeLocale.ResumingMessage -NoNewline -ForegroundColor Yellow
+
+        # Trigger the Resume event
+        Invoke-PodeEvent -Type Resume
+
+        # Update the server's suspended state
+        $PodeContext.Server.Suspended = $false
+
+        # Pause briefly to ensure any required internal processes have time to stabilize
+        Start-Sleep -Seconds 5
+
+        # Retrieve all runspaces related to Pode
+        $runspaces = Get-Runspace -name 'Pode_*'
+        foreach ($runspace in $runspaces) {
+            # Disable debugging for each runspace to restore normal execution
+            Disable-RunspaceDebug -Runspace $runspace
+        }
+
+        # Inform user that the resume process is complete
+        Write-PodeHost 'Done' -ForegroundColor Green
+
+        # Small delay before refreshing the console
+        Start-Sleep 1
+
+        # Clear the host and display header information
+        Show-PodeConsoleInfo -ShowHeader
+    }
+    catch {
+        # Log any errors that occur
+        $_ | Write-PodeErrorLog
+    }
+    finally {
+        # Reinitialize the CancellationTokenSource for future suspension/resumption
+        Reset-PodeCancellationToken -Type Resume
+    }
 }

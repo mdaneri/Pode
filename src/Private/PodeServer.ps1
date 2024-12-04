@@ -68,8 +68,8 @@ function Start-PodeWebServer {
         }
     }
 
-    # create the listener
-    $listener = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)Listener -CancellationToken `$PodeContext.Tokens.Cancellation.Token")))
+    # Create the listener
+    $listener = & $("New-Pode$($PodeContext.Server.ListenerType)Listener") -CancellationToken $PodeContext.Tokens.Cancellation.Token -SuspensionToken $PodeContext.Tokens.Suspension.Token
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
@@ -118,7 +118,7 @@ function Start-PodeWebServer {
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                     # get request and response
-                    $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
+                    $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.CombinedToken.Token))
 
                     try {
                         try {
@@ -295,7 +295,7 @@ function Start-PodeWebServer {
 
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-                    $message = (Wait-PodeTask -Task $Listener.GetServerSignalAsync($PodeContext.Tokens.Cancellation.Token))
+                    $message = (Wait-PodeTask -Task $Listener.GetServerSignalAsync($PodeContext.Tokens.CombinedToken.Token))
 
                     try {
                         # get the sockets for the message
@@ -373,7 +373,7 @@ function Start-PodeWebServer {
 
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-                    $context = (Wait-PodeTask -Task $Listener.GetClientSignalAsync($PodeContext.Tokens.Cancellation.Token))
+                    $context = (Wait-PodeTask -Task $Listener.GetClientSignalAsync($PodeContext.Tokens.CombinedToken.Token))
 
                     try {
                         $payload = ($context.Message | ConvertFrom-Json)
@@ -496,10 +496,13 @@ function New-PodeListener {
     param(
         [Parameter(Mandatory = $true)]
         [System.Threading.CancellationToken]
-        $CancellationToken
+        $CancellationToken,
+        [Parameter(Mandatory = $true)]
+        [System.Threading.CancellationToken]
+        $SuspensionToken
     )
 
-    return [PodeListener]::new($CancellationToken)
+    return [PodeListener]::new($CancellationToken,$SuspensionToken)
 }
 
 function New-PodeListenerSocket {

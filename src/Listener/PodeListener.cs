@@ -8,7 +8,7 @@ namespace Pode
 {
     public class PodeListener : PodeConnector
     {
-        private IList<PodeSocket> Sockets;
+        private readonly List<PodeSocket> Sockets;
 
         public IDictionary<string, PodeSignal> Signals { get; private set; }
         public IDictionary<string, IDictionary<string, PodeServerEvent>> ServerEvents { get; private set; }
@@ -46,8 +46,8 @@ namespace Pode
             }
         }
 
-        public PodeListener(CancellationToken cancellationToken = default)
-            : base(cancellationToken)
+        public PodeListener(CancellationToken cancellationToken = default, CancellationToken suspensionToken = default)
+            : base(cancellationToken, suspensionToken)
         {
             Sockets = new List<PodeSocket>();
             Signals = new Dictionary<string, PodeSignal>();
@@ -137,60 +137,60 @@ namespace Pode
 
         public void SendSseEvent(string name, string[] groups, string[] clientIds, string eventType, string data, string id = null)
         {
-            Task.Run(async () =>
-            {
-                if (!ServerEvents.ContainsKey(name))
-                {
-                    return;
-                }
+            _ = Task.Run(async () =>
+                 {
+                     if (!ServerEvents.ContainsKey(name))
+                     {
+                         return;
+                     }
 
-                if (clientIds == default(string[]) || clientIds.Length == 0)
-                {
-                    clientIds = ServerEvents[name].Keys.ToArray();
-                }
+                     if (clientIds == default(string[]) || clientIds.Length == 0)
+                     {
+                         clientIds = ServerEvents[name].Keys.ToArray();
+                     }
 
-                foreach (var clientId in clientIds)
-                {
-                    if (!ServerEvents[name].ContainsKey(clientId))
-                    {
-                        continue;
-                    }
+                     foreach (var clientId in clientIds)
+                     {
+                         if (!ServerEvents[name].ContainsKey(clientId))
+                         {
+                             continue;
+                         }
 
-                    if (ServerEvents[name][clientId].IsForGroup(groups))
-                    {
-                        await ServerEvents[name][clientId].Context.Response.SendSseEvent(eventType, data, id).ConfigureAwait(false);
-                    }
-                }
-            }, CancellationToken);
+                         if (ServerEvents[name][clientId].IsForGroup(groups))
+                         {
+                             await ServerEvents[name][clientId].Context.Response.SendSseEvent(eventType, data, id).ConfigureAwait(false);
+                         }
+                     }
+                 }, CombinedToken);
         }
 
         public void CloseSseConnection(string name, string[] groups, string[] clientIds)
         {
-            Task.Run(async () =>
-            {
-                if (!ServerEvents.ContainsKey(name))
-                {
-                    return;
-                }
+            _ = Task.Run(async () =>
+             {
+                 if (!ServerEvents.ContainsKey(name))
+                 {
+                     return;
+                 }
 
-                if (clientIds == default(string[]) || clientIds.Length == 0)
-                {
-                    clientIds = ServerEvents[name].Keys.ToArray();
-                }
+                 if (clientIds == default(string[]) || clientIds.Length == 0)
+                 {
+                     clientIds = ServerEvents[name].Keys.ToArray();
+                 }
 
-                foreach (var clientId in clientIds)
-                {
-                    if (!ServerEvents[name].ContainsKey(clientId))
-                    {
-                        continue;
-                    }
+                 foreach (var clientId in clientIds)
+                 {
+                     if (!ServerEvents[name].ContainsKey(clientId))
+                     {
+                         continue;
+                     }
 
-                    if (ServerEvents[name][clientId].IsForGroup(groups))
-                    {
-                        await ServerEvents[name][clientId].Context.Response.CloseSseConnection().ConfigureAwait(false);
-                    }
-                }
-            }, CancellationToken);
+                     if (ServerEvents[name][clientId].IsForGroup(groups))
+                     {
+                         await ServerEvents[name][clientId].Context.Response.CloseSseConnection().ConfigureAwait(false);
+                     }
+                 }
+             }, CombinedToken);
         }
 
         public bool TestSseConnectionExists(string name, string clientId)

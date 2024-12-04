@@ -203,7 +203,7 @@ function Start-PodeServer {
             }
 
             # sit here waiting for termination/cancellation, or to restart the server
-            while (!(Test-PodeTerminationPressed -Key $key) -and !($PodeContext.Tokens.Cancellation.IsCancellationRequested)) {
+            while (  !($PodeContext.Tokens.Cancellation.IsCancellationRequested )) {
                 Start-Sleep -Seconds 1
 
                 # get the next key presses
@@ -212,6 +212,23 @@ function Start-PodeServer {
                 # check for internal restart
                 if (($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-PodeRestartPressed -Key $key)) {
                     Restart-PodeInternalServer
+                }
+
+                if (($PodeContext.Tokens.Dump.IsCancellationRequested) -or (Test-PodeDumpPressed -Key $key) ) {
+                    Clear-PodeKeyPressed
+                    Invoke-PodeDumpInternal -Format $PodeContext.Server.Debug.Dump.Format -Path $PodeContext.Server.Debug.Dump.Path  -MaxDepth $PodeContext.Server.Debug.Dump.MaxDepth
+                }
+
+                if (($PodeContext.Tokens.Suspend.IsCancellationRequested) -or ($PodeContext.Tokens.Resume.IsCancellationRequested) -or (Test-PodeSuspendPressed -Key $key)) {
+                    Clear-PodeKeyPressed
+                    if ( $PodeContext.Server.Suspended) {
+                        $PodeContext.Tokens.Resume.Cancel()
+                        Resume-PodeServerInternal
+                    }
+                    else {
+                        $PodeContext.Tokens.Suspension.Cancel()
+                        Suspend-PodeServerInternal
+                    }
                 }
 
                 # check for open browser
@@ -289,6 +306,50 @@ function Restart-PodeServer {
     param()
 
     $PodeContext.Tokens.Restart.Cancel()
+}
+
+
+<#
+.SYNOPSIS
+    Resumes the Pode server from a suspended state.
+
+.DESCRIPTION
+    This function resumes the Pode server, ensuring all associated runspaces are restored to their normal execution state.
+    It triggers the 'Resume' event, updates the server's suspended status, and clears the host for a refreshed console view.
+
+.EXAMPLE
+    Resume-PodeServer
+    # Resumes the Pode server after a suspension.
+
+#>
+function Resume-PodeServer {
+    [CmdletBinding()]
+    param()
+    if ( $PodeContext.Server.Suspended) {
+        $PodeContext.Tokens.Resume.Cancel()
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Suspends the Pode server and its runspaces.
+
+.DESCRIPTION
+    This function suspends the Pode server by pausing all associated runspaces and ensuring they enter a debug state.
+    It triggers the 'Suspend' event, updates the server's suspended status, and provides feedback during the suspension process.
+
+.EXAMPLE
+    Suspend-PodeServer
+    # Suspends the Pode server with a timeout of 60 seconds.
+
+#>
+function Suspend-PodeServer {
+    [CmdletBinding()]
+    param()
+    if (! $PodeContext.Server.Suspended) {
+        $PodeContext.Tokens.Suspension.Cancel()
+    }
 }
 
 <#

@@ -1417,7 +1417,7 @@ function Read-PodeTcpClient {
         $cBytes = [byte[]]@(13, 10)
     }
 
-    return (Wait-PodeTask -Task $TcpEvent.Request.Read($cBytes, $PodeContext.Tokens.Cancellation.Token) -Timeout $Timeout)
+    return (Wait-PodeTask -Task $TcpEvent.Request.Read($cBytes, $PodeContext.Tokens.CombinedToken.Token) -Timeout $Timeout)
 }
 
 <#

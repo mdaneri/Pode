@@ -12,8 +12,8 @@ namespace Pode
 
         public PodeItemQueue<PodeWebSocketRequest> Requests { get; private set; }
 
-        public PodeReceiver(CancellationToken cancellationToken = default(CancellationToken))
-            : base(cancellationToken)
+        public PodeReceiver(CancellationToken cancellationToken = default, CancellationToken suspensionToken = default)
+            : base(cancellationToken,suspensionToken)
         {
             WebSockets = new Dictionary<string, PodeWebSocket>();
             Requests = new PodeItemQueue<PodeWebSocketRequest>();

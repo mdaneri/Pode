@@ -434,7 +434,9 @@ function Start-PodeLoggingRunspace {
                         $_args = @(, $result) + @($logger.Method.Arguments) + @(, $rawItems)
                         $null = Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
                     }
-
+                    while ( $PodeContext.Tokens.Suspension.IsCancellationRequested){
+                        Start-Sleep -Seconds 1
+                    }
                     # small sleep to lower cpu usage
                     Start-Sleep -Milliseconds 100
                 }

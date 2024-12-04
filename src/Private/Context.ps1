@@ -408,7 +408,13 @@ function New-PodeContext {
     $ctx.Tokens = @{
         Cancellation = [System.Threading.CancellationTokenSource]::new()
         Restart      = [System.Threading.CancellationTokenSource]::new()
+        Dump         = [System.Threading.CancellationTokenSource]::new()
+        Suspension   = [System.Threading.CancellationTokenSource]::new()
+        Resume       = [System.Threading.CancellationTokenSource]::new()
+
     }
+
+    $ctx.Tokens['CombinedToken'] = [System.Threading.CancellationTokenSource]::CreateLinkedTokenSource( $ctx.Tokens.Cancellation.Token, $ctx.Tokens.Suspension.Token)
 
     # requests that should be logged
     $ctx.LogsToProcess = [System.Collections.ArrayList]::new()
@@ -484,6 +490,7 @@ function New-PodeContext {
         YamlModuleImported = $null
     }
 
+    $ctx.Server.Suspended = $false
     # return the new context
     return $ctx
 }

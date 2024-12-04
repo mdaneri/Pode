@@ -248,7 +248,7 @@ function Wait-PodeNetTaskInternal {
         $checkTask.Wait()
     }
     else {
-        $checkTask.Wait($PodeContext.Tokens.Cancellation.Token)
+        $checkTask.Wait($PodeContext.Tokens.CombinedToken.Token)
     }
 
     # if the main task isnt complete, it timed out
