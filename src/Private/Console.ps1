@@ -797,19 +797,18 @@ function Get-PodeConsoleKey {
     Processes the next key press or cancellation token to execute the corresponding server action.
 #>
 function Invoke-PodeConsoleAction {
-
+    
     # Get the next key press if console input is enabled
-    if (!$PodeContext.Server.Console.DisableConsoleInput) {
-        $Key = Get-PodeConsoleKey
-        if ($null -ne $key) {
-            if ($key.Modifiers -ne 'Control') {
-                return
-            }
-            else {
-                Write-Verbose "The Console received CTRL+$($key.Key)"
-            }
+    $Key = Get-PodeConsoleKey
+    if ($null -ne $key) {
+        if ($key.Modifiers -ne 'Control') {
+            return
+        }
+        else {
+            Write-Verbose "The Console received CTRL+$($key.Key)"
         }
     }
+
 
     # Centralized key mapping
     $KeyBindings = $PodeContext.Server.Console.KeyBindings

@@ -220,18 +220,19 @@ function Register-PodeService {
         # Generate the service settings JSON file
         $jsonContent = @{
             PodeMonitorWorker = @{
-                ScriptPath         = $ScriptPath
-                PwshPath           = $PwshPath
-                ParameterString    = $ParameterString
-                LogFilePath        = $LogFilePath
-                Quiet              = !$LogServicePodeHost.IsPresent
-                DisableTermination = $true
-                ShutdownWaitTimeMs = $ShutdownWaitTimeMs
-                Name               = $Name
-                StartMaxRetryCount = $StartMaxRetryCount
-                StartRetryDelayMs  = $StartRetryDelayMs
-                LogLevel           = $LogLevel.ToUpper()
-                LogMaxFileSize     = $LogMaxFileSize
+                ScriptPath          = $ScriptPath
+                PwshPath            = $PwshPath
+                ParameterString     = $ParameterString
+                LogFilePath         = $LogFilePath
+                Quiet               = !$LogServicePodeHost.IsPresent
+                DisableTermination  = $true
+                DisableConsoleInput = $true
+                ShutdownWaitTimeMs  = $ShutdownWaitTimeMs
+                Name                = $Name
+                StartMaxRetryCount  = $StartMaxRetryCount
+                StartRetryDelayMs   = $StartRetryDelayMs
+                LogLevel            = $LogLevel.ToUpper()
+                LogMaxFileSize      = $LogMaxFileSize
             }
         }
 

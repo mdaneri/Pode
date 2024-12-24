@@ -58,7 +58,7 @@ function Start-PodeServiceHearthbeat {
         # Define the script block for the client receiver, listens for commands via the named pipe
         $scriptBlock = {
             $serviceState = 'running'
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
 
                 Write-PodeHost -Message "Initialize Listener Pipe $($PodeContext.Server.Service.PipeName)" -Force
                 Write-PodeHost -Message "Service State: $serviceState" -Force
@@ -88,7 +88,7 @@ function Start-PodeServiceHearthbeat {
                     # Process incoming messages in a loop as long as the pipe is connected
                     while ($pipeStream.IsConnected) {
                         $message = $reader.ReadLine()  # Read message from the pipe
-                        if ( $PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+                        if ( Test-PodeCancellationTokenRequest -Type Terminate) {
                             return
                         }
 
@@ -124,19 +124,20 @@ function Start-PodeServiceHearthbeat {
                                 'suspend' {
                                     # Process 'suspend' message
                                     Write-PodeHost -Message 'Server requested suspend. Suspending Pode ...' -Force
-                                    Start-Sleep 5
                                     $serviceState = 'suspended'
-                                    #Suspend-PodeServer  # Suspend Pode server
-                                    # return  # Exit the loop
+                                    Write-PodeHost -Message "Service State: $serviceState" -Force
+                                    Start-Sleep 1
+                                    Suspend-PodeServer
                                 }
 
                                 'resume' {
                                     # Process 'resume' message
                                     Write-PodeHost -Message 'Server requested resume. Resuming Pode ...' -Force
-                                    Start-Sleep 5
                                     $serviceState = 'running'
-                                    #Resume-PodeServer  # Resume Pode server
-                                    #  return  # Exit the loop
+                                    Write-PodeHost -Message "Service State: $serviceState" -Force
+                                    Start-Sleep 1
+                                    Resume-PodeServer
+
                                 }
                             }
 
@@ -1638,4 +1639,39 @@ function Get-PodeRealServiceName {
         # Assume Windows or unknown platform
         return $Name
     }
+}
+
+function Invoke-PodeServiceAction {
+    if ($PodeContext.Server.AllowedActions.Restart) {
+        if (Test-PodeCancellationTokenRequest -Type Restart) {
+            Restart-PodeInternalServer
+        }
+    }
+
+    # Handle enable/disable server actions
+    if ($PodeContext.Server.AllowedActions.Disable -and ($serverState -eq 'Running')) {
+        if (Test-PodeCancellationTokenRequest -Type Disable) {
+            if (Test-PodeServerIsEnabled) {
+                Disable-PodeServerInternal
+                Show-PodeConsoleInfo -ShowTopSeparator
+            }
+        }
+        elseif (! (Test-PodeServerIsEnabled)) {
+            Enable-PodeServerInternal
+            Show-PodeConsoleInfo -ShowTopSeparator
+        }
+    }
+
+    # Handle suspend/resume actions
+    if ($PodeContext.Server.AllowedActions.Suspend) {
+        if ((Test-PodeCancellationTokenRequest -Type Resume) -and ($serverState -eq 'Suspended')) {
+            Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
+        }
+        elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and ($serverState -eq 'Running')) {
+            Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
+        }
+    }
+
+    # Wait before to process the next action
+    Start-Sleep -Seconds 1
 }
