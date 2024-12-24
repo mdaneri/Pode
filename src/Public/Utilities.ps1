@@ -895,10 +895,7 @@ function Out-PodeHost {
     Show the Object Type
 
 .PARAMETER Label
-Show a label for the object
-
-.PARAMETER Force
-Overrides the -Quiet flag of the server.
+    Show a label for the object
 
 .PARAMETER Force
     Overrides the -Quiet flag of the server.

@@ -304,7 +304,7 @@
     suspendedMessage                                                  = 'معلق'
     runningMessage                                                    = 'يعمل'
     openHttpEndpointMessage                                           = 'افتح أول نقطة نهاية HTTP في المتصفح الافتراضي.'
-     terminatedMessage                                                 = 'تم الإنهاء'
+    terminatedMessage                                                 = 'تم الإنهاء'
     showMetricsMessage                                                = 'عرض المقاييس'
     clearConsoleMessage                                               = 'مسح وحدة التحكم'
     serverMetricsMessage                                              = 'مقاييس الخادم'

@@ -121,6 +121,129 @@ This pauses the service, returning `$true` if successful.
 Resume a suspended service (Windows only) using the `Resume-PodeService` function.
 
 #### Example:
+# Using Pode as a Service
+
+Pode provides built-in functions to easily manage services across platforms (Windows, Linux, macOS). These functions allow you to register, start, stop, suspend, resume, query, and unregister Pode services in a cross-platform way.
+
+---
+
+## Registering a Service
+
+The `Register-PodeService` function creates the necessary service files and configurations for your system.
+
+#### Example:
+
+```powershell
+Register-PodeService -Name "HelloService" -Description "Example Pode Service" -ParameterString "-Verbose" -Start
+```
+
+This registers a service named "HelloService" and starts it immediately after registration. The service runs your Pode script with the specified parameters.
+
+### `Register-PodeService` Parameters
+
+The `Register-PodeService` function offers several parameters to customize your service registration:
+
+- **`-Name`** *(string)*:
+  The name of the service to register.
+  **Mandatory**.
+
+- **`-Description`** *(string)*:
+  A brief description of the service. Defaults to `"This is a Pode service."`.
+
+- **`-DisplayName`** *(string)*:
+  The display name for the service (Windows only). Defaults to `"Pode Service($Name)"`.
+
+- **`-StartupType`** *(string)*:
+  Specifies the startup type of the service (`'Automatic'` or `'Manual'`). Defaults to `'Automatic'`.
+
+- **`-ParameterString`** *(string)*:
+  Additional parameters to pass to the worker script when the service is run. Defaults to an empty string.
+
+- **`-LogServicePodeHost`** *(switch)*:
+  Enables logging for the Pode service host.
+
+- **`-ShutdownWaitTimeMs`** *(int)*:
+  Maximum time in milliseconds to wait for the service to shut down gracefully before forcing termination. Defaults to `30,000 ms`.
+
+- **`-StartMaxRetryCount`** *(int)*:
+  Maximum number of retries to start the PowerShell process before giving up. Defaults to `3`.
+
+- **`-StartRetryDelayMs`** *(int)*:
+  Delay in milliseconds between retry attempts to start the PowerShell process. Defaults to `5,000 ms`.
+
+- **`-WindowsUser`** *(string)*:
+  Specifies the username under which the service will run. Defaults to the current user (Windows only).
+
+- **`-LinuxUser`** *(string)*:
+  Specifies the username under which the service will run. Defaults to the current user (Linux Only).
+
+- **`-Agent`** *(switch)*:
+    Create an Agent instead of a Daemon in MacOS (MacOS Only).
+
+- **`-Start`** *(switch)*:
+  Starts the service immediately after registration.
+
+- **`-Password`** *(securestring)*:
+  A secure password for the service account (Windows only). If omitted, the service account will be `'NT AUTHORITY\SYSTEM'`.
+
+- **`-SecurityDescriptorSddl`** *(string)*:
+  A security descriptor in SDDL format specifying the permissions for the service (Windows only).
+
+- **`-SettingsPath`** *(string)*:
+  Directory to store the service configuration file (`<name>_svcsettings.json`). Defaults to a directory under the script path.
+
+- **`-LogPath`** *(string)*:
+  Path for the service log files. Defaults to a directory under the script path.
+
+---
+
+## Starting a Service
+
+You can start a registered service using the `Start-PodeService` function.
+
+#### Example:
+
+```powershell
+Start-PodeService -Name "HelloService"
+```
+
+This returns `$true` if the service starts successfully, `$false` otherwise.
+
+---
+
+## Stopping a Service
+
+To stop a running service, use the `Stop-PodeService` function.
+
+#### Example:
+
+```powershell
+Stop-PodeService -Name "HelloService"
+```
+
+This returns `$true` if the service stops successfully, `$false` otherwise.
+
+---
+
+## Suspending a Service
+
+Suspend a running service (Windows only) with the `Suspend-PodeService` function.
+
+#### Example:
+
+```powershell
+Suspend-PodeService -Name "HelloService"
+```
+
+This pauses the service, returning `$true` if successful.
+
+---
+
+## Resuming a Service
+
+Resume a suspended service (Windows only) using the `Resume-PodeService` function.
+
+#### Example:
 
 ```powershell
 Resume-PodeService -Name "HelloService"
