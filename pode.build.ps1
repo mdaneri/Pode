@@ -884,13 +884,13 @@ function Split-PodeBuildPwshPath {
 ### Helper Functions for Key Export ###
 function Export-RsaPrivateKeyPem {
     param (
-      [System.Security.Cryptography.RSA]$RsaKey
+        [System.Security.Cryptography.RSA]$RsaKey
     )
     $pemHeader = '-----BEGIN RSA PRIVATE KEY-----'
     $pemFooter = '-----END RSA PRIVATE KEY-----'
     $base64 = [Convert]::ToBase64String($RsaKey.ExportRSAPrivateKey(), 'InsertLineBreaks')
     return "$pemHeader`n$base64`n$pemFooter"
-  }
+}
 
 
 function Export-RsaPublicKeyPem {
@@ -917,6 +917,43 @@ function Export-EcdsaPublicKeyPem {
     return "$pemHeader`n$base64`n$pemFooter"
 }
 
+function Export-PfxPrivateKey {
+    param (
+        [Parameter(Mandatory = $true)]
+        [System.Security.Cryptography.AsymmetricAlgorithm]$Key
+    )
+
+    # Define certificate validity (1 year)
+    $notBefore = (Get-Date).ToUniversalTime()
+    $notAfter = $notBefore.AddYears(1)
+    $subject = 'CN=JWT-Test-Cert'
+
+    # Handle RSA and ECDSA key types
+    if ($Key -is [System.Security.Cryptography.RSA]) {
+        $req = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
+            $subject,
+            $Key,
+            [System.Security.Cryptography.HashAlgorithmName]::SHA256,
+            [System.Security.Cryptography.RSASignaturePadding]::Pkcs1
+        )
+    }
+    elseif ($Key -is [System.Security.Cryptography.ECDsa]) {
+        $req = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
+            $subject,
+            $Key,
+            [System.Security.Cryptography.HashAlgorithmName]::SHA256
+        )
+    }
+    else {
+        throw 'Unsupported key type. Only RSA and ECDSA are supported.'
+    }
+
+    # Generate a self-signed certificate
+    $cert = $req.CreateSelfSigned($notBefore, $notAfter)
+
+    # Export to PFX with the private key
+    return $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
+}
 
 # Check if the script is running under Invoke-Build
 if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -and ($null -eq $BuildRoot))) {
@@ -1277,7 +1314,7 @@ Add-BuildTask CreateCerts {
 
     foreach ($alg in $keySettings.Keys) {
         if (-Not $keySettings.ContainsKey($alg)) {
-            Write-Output "❌ Unsupported algorithm: $alg. Skipping..."
+            Write-Output "Unsupported algorithm: $alg. Skipping..."
             Continue
         }
 
@@ -1285,12 +1322,15 @@ Add-BuildTask CreateCerts {
         $publicKeyTestsPath = "$BaseOutputTestsPath/$alg-public.pem"
         $privateKeyExamplesPath = "$BaseOutputExamplesPath/$alg-private.pem"
         $publicKeyExamplesPath = "$BaseOutputExamplesPath/$alg-public.pem"
+        $privateKeyPfxTestsPath = "$BaseOutputTestsPath/$alg-private.pfx"
+        $privateKeyPfxExamplesPath = "$BaseOutputExamplesPath/$alg-private.pfx"
 
         Write-Output "🔹 Generating keys for: $alg..."
 
         if ($alg -match '^RS') {
             $rsa = [System.Security.Cryptography.RSA]::Create($keySettings[$alg])
 
+            # Generate PEM
             $privatePem = Export-RsaPrivateKeyPem $rsa
             Set-Content -Path $privateKeyTestsPath -Value $privatePem
             Set-Content -Path $privateKeyExamplesPath -Value $privatePem
@@ -1298,13 +1338,32 @@ Add-BuildTask CreateCerts {
             $publicPem = Export-RsaPublicKeyPem $rsa
             Set-Content -Path $publicKeyTestsPath -Value $publicPem
             Set-Content -Path $publicKeyExamplesPath -Value $publicPem
+
+            # Generate PFX
+            <#         $privatePfx = Export-PfxPrivateKey -Key $rsa
+            Set-Content -Path $privateKeyPfxTestsPath -Value $privatePfx
+            Set-Content -Path $privateKeyPfxExamplesPath -Value $privatePfx
+#>
+
+            try {
+                $cert = New-SelfSignedCertificate -Subject 'Pode' -CertStoreLocation 'Cert:\CurrentUser\My' -KeyAlgorithm RSA -KeyLength $keySettings[$alg]
+
+                # Export PFX
+                $securePassword = ConvertTo-SecureString -String 'MySecurePassword' -Force -AsPlainText
+                Export-PfxCertificate -Cert $cert -FilePath $privateKeyPfxTestsPath -Password $securePassword
+                Export-PfxCertificate -Cert $cert -FilePath $privateKeyPfxExamplesPath -Password $securePassword
+            }
+            finally {
+                # Cleanup from Windows Cert Store
+                Remove-Item -Path "Cert:\CurrentUser\My\$($cert.Thumbprint)" -Force -ErrorAction SilentlyContinue
+            }
         }
         elseif ($alg -match '^ES') {
             $ec = [System.Security.Cryptography.ECDsa]::Create($keySettings[$alg])
             if ($null -eq $ec) {
                 throw "Failed to create ECDSA key for $alg. Ensure your system supports ECC."
             }
-
+            # Generate PEM
             $privatePem = Export-EcdsaPrivateKeyPem $ec
             Set-Content -Path $privateKeyTestsPath -Value $privatePem
             Set-Content -Path $privateKeyExamplesPath -Value $privatePem
@@ -1313,10 +1372,16 @@ Add-BuildTask CreateCerts {
             $publicPem = Export-EcdsaPublicKeyPem $ec
             Set-Content -Path $publicKeyTestsPath -Value $publicPem
             Set-Content -Path $publicKeyExamplesPath -Value $publicPem
+
+            # Generate PFX
+            $privatePfx = Export-PfxPrivateKey -Key $ec
+            Set-Content -Path $privateKeyPfxTestsPath -Value $privatePfx
+            Set-Content -Path $privateKeyPfxExamplesPath -Value $privatePfx
+
         }
 
-        Write-Output "✅ Private Keys generated: $privateKeyTestsPath & $privateKeyExamplesPath"
-        Write-Output "✅ Public Keys generated: $publicKeyExamplesPath & $publicKeyExamplesPath"
+        Write-Output "Private Keys generated: $privateKeyTestsPath & $privateKeyExamplesPath"
+        Write-Output "Public Keys generated: $publicKeyExamplesPath & $publicKeyExamplesPath"
     }
 
 }

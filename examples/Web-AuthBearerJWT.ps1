@@ -145,9 +145,17 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
         # Define corresponding public key path
         $publicKeyPath = Join-Path -Path $CertsPath -ChildPath $alg-public.pem
 
+
         # Ensure the matching public key exists
         if (! (Test-Path $publicKeyPath)) {
             Write-Warning "Skipping $($alg): Public key missing ($publicKeyPath)."
+            Continue
+        }
+
+        $pfxKeyPath = Join-Path -Path $CertsPath -ChildPath $alg-private.pfx
+        # Ensure the matching public key exists
+        if (! (Test-Path $pfxKeyPath)) {
+            Write-Warning "Skipping $($alg): Private key missing ($pfxKeyPath)."
             Continue
         }
 
@@ -157,29 +165,35 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
         while ($true) {
             # Define the authentication location dynamically (e.g., `/auth/bearer/jwt/{algorithm}`)
             $pathRoute = "/auth/bearer/jwt/$alg"
+
+
             # Register Pode Bearer Authentication
             Write-PodeHost "🔹 Registering JWT Authentication for: $alg ($Location)"
 
             $rsaPaddingScheme = if ($alg.StartsWith('PS')) { 'Pss' } else { 'Pkcs1V15' }
+            $authBearerScheme = if (  ! (Test-PodeIsPSCore)) {
+                New-PodeAuthBearerScheme -Location $Location -AsJWT -PrivateKey $privateKey -PublicKey $publicKey -RsaPaddingScheme $rsaPaddingScheme -JwtVerificationMode $JwtVerificationMode
+            }
+            else {
+                New-PodeAuthBearerScheme -Location $Location -AsJWT -PfxKeyPath $pfxKeyPath  -RsaPaddingScheme $rsaPaddingScheme -JwtVerificationMode $JwtVerificationMode
+            }
 
-            New-PodeAuthBearerScheme -Location $Location -AsJWT -PrivateKey $privateKey -PublicKey $publicKey -RsaPaddingScheme $rsaPaddingScheme -JwtVerificationMode $JwtVerificationMode |
-                Add-PodeAuth -Name "Bearer_JWT_$alg" -Sessionless -ScriptBlock {
-                    param($jwt)
+            Add-PodeAuth -Name "Bearer_JWT_$alg" -Scheme $authBearerScheme -Sessionless  -ScriptBlock {
+                param($jwt)
 
-                    # here you'd check a real user storage, this is just for example
-                    if ($jwt.username -ieq 'morty') {
-                        return @{
-                            User = @{
-                                ID   = $jWt.id
-                                Name = $jst.name
-                                Type = $jst.type
-                            }
+                # here you'd check a real user storage, this is just for example
+                if ($jwt.username -ieq 'morty') {
+                    return @{
+                        User = @{
+                            ID   = $jWt.id
+                            Name = $jst.name
+                            Type = $jst.type
                         }
                     }
-
-                    return $null
                 }
 
+                return $null
+            }
             # GET request to get list of users (since there's no session, authentication will always happen)
             Add-PodeRoute -Method Get -Path $pathRoute -Authentication "Bearer_JWT_$alg" -ScriptBlock {
 

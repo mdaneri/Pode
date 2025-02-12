@@ -2501,14 +2501,17 @@ function Test-PodeJwt {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [pscustomobject]$Payload,
+        [pscustomobject]
+        $Payload,
 
         [Parameter()]
-        [string]$Issuer = 'Pode',
+        [string]
+        $Issuer = 'Pode',
 
         [Parameter()]
         [ValidateSet('Strict', 'Moderate', 'Lenient')]
-        [string]$JwtVerificationMode = 'Lenient'
+        [string]
+        $JwtVerificationMode = 'Lenient'
     )
 
     # Get current Unix timestamp
@@ -2931,6 +2934,7 @@ function New-PodeAuthBearerScheme {
         [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_NONE')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_RS_ES')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_HS')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_RS_ES_PFX')]
         [switch]
         $AsJWT,
 
@@ -2951,13 +2955,19 @@ function New-PodeAuthBearerScheme {
         [String]
         $PublicKey,
 
+        [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_RS_ES_PFX')]
         [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_RS_ES')]
         [ValidateSet('Pkcs1V15', 'Pss')]
         [string]
         $RsaPaddingScheme = 'Pkcs1V15',
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_RS_ES')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_HS')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_RS_ES_PFX')]
+        [Parameter()]
+        [string]$PfxKeyPath, # Required for RSA/ECDSA PFX
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_RS_ES')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_HS')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_RS_ES_PFX')]
         [ValidateSet('Strict', 'Moderate', 'Lenient')]
         [string]
         $JwtVerificationMode = 'Lenient'
@@ -2971,7 +2981,7 @@ function New-PodeAuthBearerScheme {
 
     $alg = switch ($PSCmdlet.ParameterSetName) {
         'Bearer_RS_ES' {
-            @( Get-PodeJwtSigningAlgorithm -PrivateKey  $PrivateKey -RsaPaddingScheme $RsaPaddingScheme )
+            @( Get-PodeJwtSigningAlgorithm -PrivateKey  $PrivateKey -RsaPaddingScheme $RsaPaddingScheme  )
         }
         'Bearer_HS' {
             if ( $Algorithm.Count -eq 0) {
@@ -2983,6 +2993,9 @@ function New-PodeAuthBearerScheme {
         }
         'Bearer_NONE' {
             @('NONE')
+        }
+        'Bearer_RS_ES_PFX'{
+            @( Get-PodeJwtSigningAlgorithm -PfxKeyPath $PfxKeyPath -Password (ConvertTo-SecureString -String 'MySecurePassword' -Force -AsPlainText) -RsaPaddingScheme $RsaPaddingScheme  )
         }
     }
 
@@ -3011,6 +3024,7 @@ function New-PodeAuthBearerScheme {
             Location            = $Location
             JwtVerificationMode = $JwtVerificationMode
             Algorithm           = $alg
+            PfxKeyPath          = $PfxKeyPath
         }
     }
 }

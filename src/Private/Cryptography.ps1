@@ -370,7 +370,12 @@ function New-PodeJwtSignature {
 
         [Parameter()]
         [securestring]
-        $PrivateKey
+        $PrivateKey,
+
+        [Parameter()]
+        [string]
+        $PfxKeyPath
+
     )
 
     if (($Algorithm -ieq 'none') -and ((($null -ne $SecretBytes) -and ($SecretBytes.Length -gt 0)) -or ($null -ne $PrivateKey))) {
@@ -386,6 +391,7 @@ function New-PodeJwtSignature {
 
     switch ($Algorithm) {
         'NONE' { return  [string]::Empty }
+
         # HMAC-SHA (HS256, HS384, HS512)
         { $_ -match '^HS(\d{3})$' } {
             if ($null -eq $SecretBytes) {
@@ -411,8 +417,19 @@ function New-PodeJwtSignature {
                 throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'private', 'RSA', $Algorithm)
             }
 
-            $rsa = [System.Security.Cryptography.RSA]::Create()
-            $rsa.ImportFromPem( [Runtime.InteropServices.Marshal]::PtrToStringUni([Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($PrivateKey)))
+            #      $rsa = [System.Security.Cryptography.RSA]::Create()
+            #     $rsa.ImportFromPem( [Runtime.InteropServices.Marshal]::PtrToStringUni([Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($PrivateKey)))
+
+            if ($PrivateKey) {
+                $rsa = [System.Security.Cryptography.RSA]::Create()
+                $rsa.ImportFromPem([Runtime.InteropServices.Marshal]::PtrToStringUni([Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($PrivateKey)))
+
+            }
+            else {
+                # Load from PFX file (PowerShell 5.1 workaround)
+                $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($PfxKeyPath, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable)
+                $rsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)
+            }
 
             # Map RS256, RS384, RS512 to their correct SHA algorithm
             $hashAlgo = switch ($Algorithm) {
@@ -447,8 +464,17 @@ function New-PodeJwtSignature {
                 throw  ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'private', 'ECDSA', $Algorithm)
             }
 
-            $ecKey = [System.Security.Cryptography.ECDsa]::Create()
-            $ecKey.ImportFromPem( [Runtime.InteropServices.Marshal]::PtrToStringUni([Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($PrivateKey)))
+            #    $ecKey = [System.Security.Cryptography.ECDsa]::Create()
+            #   $ecKey.ImportFromPem( [Runtime.InteropServices.Marshal]::PtrToStringUni([Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($PrivateKey)))
+            if ($PrivateKey) {
+                $ecKey = [System.Security.Cryptography.ECDsa]::Create()
+                $ecKey.ImportFromPem([Runtime.InteropServices.Marshal]::PtrToStringUni([Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($PrivateKey)))
+            }
+            else {
+                # Load from PFX
+                $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($PfxKeyPath, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable)
+                $ecKey = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::GetECDsaPrivateKey($cert)
+            }
 
             # Map ES256, ES384, ES512 to their correct SHA algorithm
             $hashAlgo = switch ($Algorithm) {
@@ -543,7 +569,10 @@ function Confirm-PodeJwt {
         [securestring]$Secret, # Required for HMAC
 
         [Parameter()]
-        [string]$PublicKey, # Required for RSA/ECDSA
+        [string]$PublicKey, # Required for RSA/ECDSA PEM
+
+        [Parameter()]
+        [string]$PfxKeyPath, # Required for RSA/ECDSA PFX
 
         [Parameter()]
         [ValidateSet('Strict', 'Moderate', 'Lenient')]
@@ -571,6 +600,7 @@ function Confirm-PodeJwt {
     $Algorithm = $header.alg
     # check "none" signature, and return payload if no signature
     $isNoneAlg = ($header.alg -eq 'NONE')
+
     if ([string]::IsNullOrEmpty($Algorithm)) {
         throw ($PodeLocale.noAlgorithmInJwtHeaderExceptionMessage)
     }
@@ -649,6 +679,17 @@ function Confirm-PodeJwt {
         $rsa = [System.Security.Cryptography.RSA]::Create()
         $rsa.ImportFromPem($PublicKey)
 
+
+        if ($PublicKey) {
+            $rsa = [System.Security.Cryptography.RSA]::Create()
+            $rsa.ImportFromPem($PublicKey)
+        }
+        else {
+            # Load RSA from PFX
+            $cert = [ System.Security.Cryptography.X509Certificates.X509Certificate2]::new($PfxKeyPath, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable)
+            $rsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPublicKey($cert)
+        }
+
         $hashAlgo = switch ($Algorithm) {
             'RS256' { [System.Security.Cryptography.HashAlgorithmName]::SHA256 }
             'RS384' { [System.Security.Cryptography.HashAlgorithmName]::SHA384 }
@@ -666,7 +707,7 @@ function Confirm-PodeJwt {
         }
 
         if (!($rsa.VerifyData($headerPayloadBytes, $signatureBytes, $hashAlgo, $rsaPadding))) {
-            write-podehost 'RSA verification failed'
+            # RSA verification failed
             throw ($PodeLocale.invalidJwtSignatureSuppliedExceptionMessage)
         }
     }
@@ -677,6 +718,16 @@ function Confirm-PodeJwt {
 
         $ecdsa = [System.Security.Cryptography.ECDsa]::Create()
         $ecdsa.ImportFromPem($PublicKey)
+
+        if ($PublicKey) {
+            $ecdsa = [System.Security.Cryptography.ECDsa]::Create()
+            $ecdsa.ImportFromPem($PublicKey)
+        }
+        else {
+            # Load ECDSA from PFX (PowerShell 5.1 workaround)
+            $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($PfxKeyPath, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable)
+            $ecdsa = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::GetECDsaPublicKey($cert)
+        }
 
         $hashAlgo = switch ($Algorithm) {
             'ES256' { [System.Security.Cryptography.HashAlgorithmName]::SHA256 }
@@ -851,47 +902,94 @@ function ConvertTo-PodeDigestHash {
     - The function does not enforce a specific signing standard but allows flexibility in padding choice.
 #>
 function Get-PodeJwtSigningAlgorithm {
+    [CmdletBinding(DefaultParameterSetName = 'PEM')]
+    [OutputType([string])]
     param (
-        [System.Security.SecureString]$PrivateKey,
+        [Parameter(Mandatory=$true,ParameterSetName = 'PEM')]
+        [System.Security.SecureString]
+        $PrivateKey,
+
+        [Parameter(Mandatory=$true,ParameterSetName = 'PFX')]
+        [string]
+        $PfxKeyPath,
+
+        [Parameter(Mandatory=$true,ParameterSetName = 'PFX')]
+        [securestring]
+        $Password,
+
         [ValidateSet('Pkcs1V15', 'Pss')]
         [string]$RsaPaddingScheme = 'Pkcs1V15'  # Default to PKCS#1 v1.5 unless specified
+
+
     )
-    #if (Test-PodeIsPSCore) {
-  #      $privateKeyContent = ConvertFrom-SecureString $PrivateKey -AsPlainTex
-   # }
-   # else {
-        # Convert SecureString to plain text
-        $privateKeyContent =  [Runtime.InteropServices.Marshal]::PtrToStringUni([Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($PrivateKey))
-  #  }
-    if ($privateKeyContent -match 'BEGIN RSA PRIVATE KEY|BEGIN PRIVATE KEY') {
-        # RSA Algorithm Detected
 
-        $rsa = [System.Security.Cryptography.RSA]::Create()
-        $rsa.ImportFromPem($privateKeyContent)
+    if ($PrivateKey) {
+        $privateKeyContent = [Runtime.InteropServices.Marshal]::PtrToStringUni([Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($PrivateKey))
 
-        # Determine key size and match to RSA algorithms
-        switch ($rsa.KeySize) {
-            2048 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS256' } else { return 'PS256' } }
-            3072 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS384' } else { return 'PS384' } }
-            4096 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS512' } else { return 'PS512' } }
-            default { throw ($PodeLocale.unknownAlgorithmWithKeySizeExceptionMessage -f 'RSA', $rsa.KeySize) }
+        if ($privateKeyContent -match 'BEGIN RSA PRIVATE KEY|BEGIN PRIVATE KEY') {
+            # RSA Algorithm Detected
+
+            $rsa = [System.Security.Cryptography.RSA]::Create()
+            $rsa.ImportFromPem($privateKeyContent)
+
+            # Determine key size and match to RSA algorithms
+            switch ($rsa.KeySize) {
+                2048 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS256' } else { return 'PS256' } }
+                3072 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS384' } else { return 'PS384' } }
+                4096 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS512' } else { return 'PS512' } }
+                default { throw ($PodeLocale.unknownAlgorithmWithKeySizeExceptionMessage -f 'RSA', $rsa.KeySize) }
+            }
+        }
+        elseif ($privateKeyContent -match 'BEGIN EC PRIVATE KEY') {
+            # ECDSA Algorithm Detected
+            $ecdsa = [System.Security.Cryptography.ECDsa]::Create()
+            $ecdsa.ImportFromPem($privateKeyContent)
+
+            # Determine key size and map to ES algorithms
+            switch ($ecdsa.KeySize) {
+                256 { return 'ES256' }
+                384 { return 'ES384' }
+                521 { return 'ES512' }
+                default { throw ($PodeLocale.unknownAlgorithmWithKeySizeExceptionMessage -f $ecdsa.KeySize) }
+            }
+
+        }
+        else {
+            throw $PodeLocale.unknownAlgorithmOrInvalidPemExceptionMessage
         }
     }
-    elseif ($privateKeyContent -match 'BEGIN EC PRIVATE KEY') {
-        # ECDSA Algorithm Detected
-        $ecdsa = [System.Security.Cryptography.ECDsa]::Create()
-        $ecdsa.ImportFromPem($privateKeyContent)
-
-        # Determine key size and map to ES algorithms
-        switch ($ecdsa.KeySize) {
-            256 { return 'ES256' }
-            384 { return 'ES384' }
-            521 { return 'ES512' }
-            default { throw ($PodeLocale.unknownAlgorithmWithKeySizeExceptionMessage -f $ecdsa.KeySize) }
+    elseif ($PfxKeyPath) {
+        if (!(Test-Path $PfxKeyPath)) {
+            throw "The private key path '$PfxKeyPath' does not exist."
         }
+       
+        # Load private key from PFX file (PowerShell 5.1 compatibility)
+        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($PfxKeyPath, $Password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable)
 
-    }
-    else {
-        throw $PodeLocale.unknownAlgorithmOrInvalidPemExceptionMessage
+        # Determine if it's RSA or ECDSA
+        $rsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)
+        $ecdsa = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::GetECDsaPrivateKey($cert)
+
+        if ($rsa) {
+            $keySize = $rsa.KeySize
+            switch ($keySize) {
+                2048 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS256' } else { return 'PS256' } }
+                3072 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS384' } else { return 'PS384' } }
+                4096 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS512' } else { return 'PS512' } }
+                default { throw ($PodeLocale.unknownAlgorithmWithKeySizeExceptionMessage -f 'RSA', $rsa.KeySize) }
+            }
+        }
+        elseif ($ecdsa) {
+            $keySize = $ecdsa.KeySize
+            switch ($keySize) {
+                256 { return 'ES256' }
+                384 { return 'ES384' }
+                521 { return 'ES512' }
+                default { throw ($PodeLocale.unknownAlgorithmWithKeySizeExceptionMessage -f $ecdsa.KeySize) }
+            }
+        }
+        else {
+            throw "Invalid private key in '$PfxKeyPath'. It must be an RSA or ECDSA key."
+        }
     }
 }

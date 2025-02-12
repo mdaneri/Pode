@@ -44,8 +44,6 @@ param (
   [string[]]$Algorithm = @('ALL')
 )
 
-
-
 ### Helper Functions for Key Export ###
 function Export-RsaPrivateKeyPem {
   param (
@@ -81,6 +79,52 @@ function Export-EcdsaPublicKeyPem {
   $base64 = [Convert]::ToBase64String($EcdsaKey.ExportSubjectPublicKeyInfo(), 'InsertLineBreaks')
   return "$pemHeader`n$base64`n$pemFooter"
 }
+function Export-PfxPrivateKey {
+  param (
+    [Parameter(Mandatory = $true)]
+    [System.Security.Cryptography.AsymmetricAlgorithm]$Key,
+
+    [Parameter(Mandatory = $true)]
+    [string]$CertPath
+  )
+
+  # Define certificate validity (1 year)
+  $notBefore = (Get-Date).ToUniversalTime()
+  $notAfter = $notBefore.AddYears(1)
+  $subject = 'CN=JWT-Test-Cert'
+
+  # Handle RSA and ECDSA key types
+  if ($Key -is [System.Security.Cryptography.RSA]) {
+    $req = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
+      $subject,
+      $Key,
+      [System.Security.Cryptography.HashAlgorithmName]::SHA256,
+      [System.Security.Cryptography.RSASignaturePadding]::Pkcs1
+    )
+  }
+  elseif ($Key -is [System.Security.Cryptography.ECDsa]) {
+    $req = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
+      $subject,
+      $Key,
+      [System.Security.Cryptography.HashAlgorithmName]::SHA256
+    )
+  }
+  else {
+    throw 'Unsupported key type. Only RSA and ECDSA are supported.'
+  }
+
+  # Generate a self-signed certificate
+  $cert = $req.CreateSelfSigned($notBefore, $notAfter)
+
+  # Export to PFX with the private key
+  $pfxBytes = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
+  # Save to file
+  [System.IO.File]::WriteAllBytes($CertPath, $pfxBytes)
+}
+
+
+
+
 
 # Determine output directory based on mode
 $RootPath = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -119,17 +163,50 @@ foreach ($alg in $algorithmsToGenerate) {
 
   $privateKeyPath = "$BaseOutputDirectory/$alg-private.pem"
   $publicKeyPath = "$BaseOutputDirectory/$alg-public.pem"
+  $privateKeyPfxPath = "$BaseOutputDirectory/$alg-private.pfx"
 
   Write-Output "🔹 Generating keys for: $alg..."
 
   if ($alg -match '^RS') {
-    $rsa = [System.Security.Cryptography.RSA]::Create($keySettings[$alg])
+    #$rsa = [System.Security.Cryptography.RSA]::Create($keySettings[$alg])
 
-    $privatePem = Export-RsaPrivateKeyPem $rsa
-    Set-Content -Path $privateKeyPath -Value $privatePem
+    # Generate PEM
+    #  $privatePem = Export-RsaPrivateKeyPem $rsa
+    #  Set-Content -Path $privateKeyPath -Value $privatePem
 
-    $publicPem = Export-RsaPublicKeyPem $rsa
-    Set-Content -Path $publicKeyPath -Value $publicPem
+    #   $publicPem = Export-RsaPublicKeyPem $rsa
+    #   Set-Content -Path $publicKeyPath -Value $publicPem
+
+    # Generate PFX
+    #Export-PfxPrivateKey -Key $rsa -CertPath $privateKeyPfxPath
+
+    # Use New-SelfSignedCertificate for RSA
+    try {
+      $cert = New-SelfSignedCertificate -DnsName 'jwt.test' -CertStoreLocation 'Cert:\CurrentUser\My' -KeyAlgorithm RSA -KeyLength $keySettings[$alg]
+
+      # Export PFX
+      $securePassword = ConvertTo-SecureString -String 'MySecurePassword' -Force -AsPlainText
+      Export-PfxCertificate -Cert $cert -FilePath $privateKeyPfxPath -Password $securePassword
+
+      # Export Public Key to PEM
+      # $publicPem = [System.Convert]::ToBase64String($cert.RawData, 'InsertLineBreaks')
+      # Set-Content -Path $publicKeyPath -Value "-----BEGIN CERTIFICATE-----`n$publicPem`n-----END CERTIFICATE-----"
+
+
+
+
+      # Load the PFX certificate (ensure it's exportable)
+      $pfxCert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($privateKeyPfxPath, 'MySecurePassword', [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable)
+      # Export Public Key to PEM
+      #$publicPem ="-----BEGIN CERTIFICATE-----`n$( [System.Convert]::ToBase64String($cert.RawData, 'InsertLineBreaks'))`n-----END CERTIFICATE-----"
+     # Set-Content -Path $publicKeyPath -Value $publicPem
+
+     # Set-Content -Path $privateKeyPath -Value $pfxCert.PrivateKey.ExportRSAPrivateKeyPem()
+    }
+    finally {
+      # Cleanup from Windows Cert Store
+      Remove-Item -Path "Cert:\CurrentUser\My\$($cert.Thumbprint)" -Force -ErrorAction SilentlyContinue
+    }
   }
   elseif ($alg -match '^ES') {
     $ec = [System.Security.Cryptography.ECDsa]::Create($keySettings[$alg])
@@ -137,11 +214,15 @@ foreach ($alg in $algorithmsToGenerate) {
       throw "Failed to create ECDSA key for $alg. Ensure your system supports ECC."
     }
 
+    # Generate PEM
     $privatePem = Export-EcdsaPrivateKeyPem $ec
     Set-Content -Path $privateKeyPath -Value $privatePem
 
     $publicPem = Export-EcdsaPublicKeyPem $ec
     Set-Content -Path $publicKeyPath -Value $publicPem
+
+    # Generate PFX
+    Export-PfxPrivateKey -Key $ec -CertPath $privateKeyPfxPath
   }
 
   Write-Output "✅ Keys generated: $privateKeyPath & $publicKeyPath"
