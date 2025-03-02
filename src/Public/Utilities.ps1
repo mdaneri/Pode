@@ -1412,16 +1412,6 @@ function Get-PodeVersion {
             return $PodeManifest.ModuleVersion
         }
         return "v$($PodeManifest.ModuleVersion)"
-    param (
-        [switch]
-        $Raw
-    )
-
-    if ($PodeManifest.ModuleVersion -ne '$version$') {
-        if ($Raw) {
-            return $PodeManifest.ModuleVersion
-        }
-        return "v$($PodeManifest.ModuleVersion)"
     }
     else {
         return '[dev]'
@@ -1783,7 +1773,7 @@ function ConvertTo-PodeSerializedString {
         $serializedArray = @()
 
         # return '' if the inputObjects is null
-        if($null -eq $inputObjects){
+        if ($null -eq $inputObjects) {
             return ''
         }
 
@@ -1802,27 +1792,27 @@ function ConvertTo-PodeSerializedString {
                             if ($Explode) {
                                 # Serialize each key-value pair with '=' and join with ','
                                 $serializedArray += ( ($item.Keys | ForEach-Object {
-                                    $key = $_
-                                    $value = $item[$_]
-                                    # URL-encode unless $NoUrlEncode is specified
-                                    if (-not $NoUrlEncode) {
-                                        $key = [uri]::EscapeDataString($key)
-                                        $value = [uri]::EscapeDataString($value)
-                                    }
-                                    "$key=$value"
-                                }) -join ',' )
+                                            $key = $_
+                                            $value = $item[$_]
+                                            # URL-encode unless $NoUrlEncode is specified
+                                            if (-not $NoUrlEncode) {
+                                                $key = [uri]::EscapeDataString($key)
+                                                $value = [uri]::EscapeDataString($value)
+                                            }
+                                            "$key=$value"
+                                        }) -join ',' )
                             }
                             else {
                                 # Serialize each key-value pair with ',' and join with ','
                                 $serializedArray += ( ($item.Keys | ForEach-Object {
-                                    $key = $_
-                                    $value = $item[$_]
-                                    if (-not $NoUrlEncode) {
-                                        $key = [uri]::EscapeDataString($key)
-                                        $value = [uri]::EscapeDataString($value)
-                                    }
-                                    "$key,$value"
-                                }) -join ',' )
+                                            $key = $_
+                                            $value = $item[$_]
+                                            if (-not $NoUrlEncode) {
+                                                $key = [uri]::EscapeDataString($key)
+                                                $value = [uri]::EscapeDataString($value)
+                                            }
+                                            "$key,$value"
+                                        }) -join ',' )
                             }
                             break
                         }
@@ -1832,26 +1822,26 @@ function ConvertTo-PodeSerializedString {
                             if ($Explode) {
                                 # Prepend '.' and serialize each key-value pair with '='
                                 $serializedArray += '.' + ( ($item.Keys | ForEach-Object {
-                                    $key = $_
-                                    $value = $item[$_]
-                                    if (-not $NoUrlEncode) {
-                                        $key = [uri]::EscapeDataString($key)
-                                        $value = [uri]::EscapeDataString($value)
-                                    }
-                                    "$key=$value"
-                                }) -join ',' )
+                                            $key = $_
+                                            $value = $item[$_]
+                                            if (-not $NoUrlEncode) {
+                                                $key = [uri]::EscapeDataString($key)
+                                                $value = [uri]::EscapeDataString($value)
+                                            }
+                                            "$key=$value"
+                                        }) -join ',' )
                             }
                             else {
                                 # Prepend '.' and serialize each key-value pair with ','
                                 $serializedArray += '.' + ( ($item.Keys | ForEach-Object {
-                                    $key = $_
-                                    $value = $item[$_]
-                                    if (-not $NoUrlEncode) {
-                                        $key = [uri]::EscapeDataString($key)
-                                        $value = [uri]::EscapeDataString($value)
-                                    }
-                                    "$key,$value"
-                                }) -join ',' )
+                                            $key = $_
+                                            $value = $item[$_]
+                                            if (-not $NoUrlEncode) {
+                                                $key = [uri]::EscapeDataString($key)
+                                                $value = [uri]::EscapeDataString($value)
+                                            }
+                                            "$key,$value"
+                                        }) -join ',' )
                             }
                             break
                         }
@@ -1861,26 +1851,26 @@ function ConvertTo-PodeSerializedString {
                             if ($Explode) {
                                 # Serialize each key-value pair with ';' prefix
                                 $serializedArray += ( ($item.Keys | ForEach-Object {
-                                    $key = $_
-                                    $value = $item[$_]
-                                    if (-not $NoUrlEncode) {
-                                        $key = [uri]::EscapeDataString($key)
-                                        $value = [uri]::EscapeDataString($value)
-                                    }
-                                    ";$key=$value"
-                                }) -join '' )
+                                            $key = $_
+                                            $value = $item[$_]
+                                            if (-not $NoUrlEncode) {
+                                                $key = [uri]::EscapeDataString($key)
+                                                $value = [uri]::EscapeDataString($value)
+                                            }
+                                            ";$key=$value"
+                                        }) -join '' )
                             }
                             else {
                                 # Serialize key-value pairs into a single parameter
                                 $valueString = ( ($item.Keys | ForEach-Object {
-                                    $key = $_
-                                    $value = $item[$_]
-                                    if (-not $NoUrlEncode) {
-                                        $key = [uri]::EscapeDataString($key)
-                                        $value = [uri]::EscapeDataString($value)
-                                    }
-                                    "$key,$value"
-                                }) -join ',' )
+                                            $key = $_
+                                            $value = $item[$_]
+                                            if (-not $NoUrlEncode) {
+                                                $key = [uri]::EscapeDataString($key)
+                                                $value = [uri]::EscapeDataString($value)
+                                            }
+                                            "$key,$value"
+                                        }) -join ',' )
                                 # Encode parameter name if necessary
                                 if (-not $NoUrlEncode) {
                                     $parameterName = [uri]::EscapeDataString($ParameterName)
@@ -1898,26 +1888,26 @@ function ConvertTo-PodeSerializedString {
                             if ($Explode) {
                                 # Serialize each key-value pair as query parameters
                                 $serializedArray += '?' + ( ($item.Keys | ForEach-Object {
-                                    $key = $_
-                                    $value = $item[$_]
-                                    if (-not $NoUrlEncode) {
-                                        $key = [uri]::EscapeDataString($key)
-                                        $value = [uri]::EscapeDataString($value)
-                                    }
-                                    "$key=$value"
-                                }) -join '&' )
+                                            $key = $_
+                                            $value = $item[$_]
+                                            if (-not $NoUrlEncode) {
+                                                $key = [uri]::EscapeDataString($key)
+                                                $value = [uri]::EscapeDataString($value)
+                                            }
+                                            "$key=$value"
+                                        }) -join '&' )
                             }
                             else {
                                 # Serialize key-value pairs into a single query parameter
                                 $valueString = ( ($item.Keys | ForEach-Object {
-                                    $key = $_
-                                    $value = $item[$_]
-                                    if (-not $NoUrlEncode) {
-                                        $key = [uri]::EscapeDataString($key)
-                                        $value = [uri]::EscapeDataString($value)
-                                    }
-                                    "$key,$value"
-                                }) -join ',' )
+                                            $key = $_
+                                            $value = $item[$_]
+                                            if (-not $NoUrlEncode) {
+                                                $key = [uri]::EscapeDataString($key)
+                                                $value = [uri]::EscapeDataString($value)
+                                            }
+                                            "$key,$value"
+                                        }) -join ',' )
                                 if (-not $NoUrlEncode) {
                                     $parameterName = [uri]::EscapeDataString($ParameterName)
                                 }
@@ -1940,14 +1930,14 @@ function ConvertTo-PodeSerializedString {
                             }
                             # Serialize each key-value pair using bracket notation
                             $serializedArray += '?' + ( ($item.Keys | ForEach-Object {
-                                $key = $_
-                                $value = $item[$_]
-                                if (-not $NoUrlEncode) {
-                                    $key = [uri]::EscapeDataString($key)
-                                    $value = [uri]::EscapeDataString($value)
-                                }
-                                "$parameterNameEncoded`[$key`]=$value"
-                            }) -join '&' )
+                                        $key = $_
+                                        $value = $item[$_]
+                                        if (-not $NoUrlEncode) {
+                                            $key = [uri]::EscapeDataString($key)
+                                            $value = [uri]::EscapeDataString($value)
+                                        }
+                                        "$parameterNameEncoded`[$key`]=$value"
+                                    }) -join '&' )
                             break
                         }
 
@@ -1972,24 +1962,24 @@ function ConvertTo-PodeSerializedString {
                         # Handle 'Simple' style for arrays
                         # Both 'Explode' and non-'Explode' result in the same output
                         $serializedArray += ( ($inputObjects | ForEach-Object {
-                            $value = $_
-                            if (-not $NoUrlEncode) {
-                                $value = [uri]::EscapeDataString($value)
-                            }
-                            $value
-                        }) -join ',' )
+                                    $value = $_
+                                    if (-not $NoUrlEncode) {
+                                        $value = [uri]::EscapeDataString($value)
+                                    }
+                                    $value
+                                }) -join ',' )
                         break
                     }
 
                     'Label' {
                         # Handle 'Label' style for arrays
                         $serializedArray += '.' + ( ($inputObjects | ForEach-Object {
-                            $value = $_
-                            if (-not $NoUrlEncode) {
-                                $value = [uri]::EscapeDataString($value)
-                            }
-                            $value
-                        }) -join ',' )
+                                    $value = $_
+                                    if (-not $NoUrlEncode) {
+                                        $value = [uri]::EscapeDataString($value)
+                                    }
+                                    $value
+                                }) -join ',' )
                         break
                     }
 
@@ -2004,22 +1994,22 @@ function ConvertTo-PodeSerializedString {
                         if ($Explode) {
                             # Serialize each value with parameter name
                             $serializedArray += ';' + ( ($inputObjects | ForEach-Object {
-                                $value = $_
-                                if (-not $NoUrlEncode) {
-                                    $value = [uri]::EscapeDataString($value)
-                                }
-                                "$parameterName=$value"
-                            }) -join ';' )
+                                        $value = $_
+                                        if (-not $NoUrlEncode) {
+                                            $value = [uri]::EscapeDataString($value)
+                                        }
+                                        "$parameterName=$value"
+                                    }) -join ';' )
                         }
                         else {
                             # Serialize values into a single parameter
                             $valueString = ( ($inputObjects | ForEach-Object {
-                                $value = $_
-                                if (-not $NoUrlEncode) {
-                                    $value = [uri]::EscapeDataString($value)
-                                }
-                                $value
-                            }) -join ',' )
+                                        $value = $_
+                                        if (-not $NoUrlEncode) {
+                                            $value = [uri]::EscapeDataString($value)
+                                        }
+                                        $value
+                                    }) -join ',' )
                             $serializedArray += ";$parameterName=$valueString"
                         }
                         break
@@ -2101,12 +2091,12 @@ function ConvertTo-PodeSerializedString {
                         else {
                             # Serialize values into a single parameter
                             $valueString = ( ($inputObjects | ForEach-Object {
-                                $value = $_
-                                if (-not $NoUrlEncode) {
-                                    $value = [uri]::EscapeDataString($value)
-                                }
-                                $value
-                            }) -join ',' )
+                                        $value = $_
+                                        if (-not $NoUrlEncode) {
+                                            $value = [uri]::EscapeDataString($value)
+                                        }
+                                        $value
+                                    }) -join ',' )
                             $serializedArray += "$parameterName=$valueString"
                         }
                         break
@@ -2274,7 +2264,7 @@ function ConvertFrom-PodeSerializedString {
     )
 
     process {
-        if($UrlDecode){
+        if ($UrlDecode) {
             $SerializedInput = [System.Web.HttpUtility]::UrlDecode($SerializedInput)
         }
         # Main deserialization logic based on style
