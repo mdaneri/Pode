@@ -1632,9 +1632,6 @@ function Start-PodeSleep {
     }
 }
 
-
-
-
 <#
 .SYNOPSIS
     Converts an object (hashtable or array) to a serialized string using a specified serialization style.
