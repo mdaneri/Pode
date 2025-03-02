@@ -4058,76 +4058,33 @@ function ConvertTo-PodeSleep {
 function Test-PodeIsISEHost {
     return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
 }
-
+ 
 <#
 .SYNOPSIS
-    Retrieves the name of the main Pode application script.
+    Displays a deprecation warning message for a function.
 
 .DESCRIPTION
-    The `Get-PodeApplicationName` function determines the name of the primary script (`.ps1`)
-    that started execution. It does this by examining the PowerShell call stack and
-    extracting the first script file that appears.
+    The Write-PodeDeprecationWarning function generates a warning message indicating that
+    a specified function is deprecated and suggests the new replacement function.
 
-    If no script file is found in the call stack, the function returns `"NoName"`.
+.PARAMETER OldFunction
+    The name of the deprecated function that is being replaced.
+
+.PARAMETER NewFunction
+    The name of the new function that should be used instead.
 
 .OUTPUTS
-    [string]
-    Returns the filename of the main application script, or `"NoName"` if no script is found.
+    None.
 
 .EXAMPLE
-    Get-PodeApplicationName
+    Write-PodeDeprecationWarning -OldFunction "New-PodeLoggingMethod" -NewFunction "New-PodeLogger"
 
-    This retrieves the name of the main script that launched the Pode application.
-
-.EXAMPLE
-    $AppName = Get-PodeApplicationName
-    Write-Host "Application Name: $AppName"
-
-    This stores the retrieved application name in a variable and prints it.
+    This will display:
+    WARNING: Function `New-PodeLoggingMethod` is deprecated. Please use 'New-PodeLogger' function instead.
 
 .NOTES
-    - This function relies on `Get-PSCallStack`, meaning it must be run within a script execution context.
-    - If called interactively or if no `.ps1` script is in the call stack, it will return `"NoName"`.
-    - This is an internal function and may change in future releases of Pode.
-#>
-function Get-PodeApplicationName {
-    $scriptFrame = (Get-PSCallStack | Where-Object { $_.Command -match '\.ps1$' } | Select-Object -First 1)
-    if ($scriptFrame) {
-        return [System.IO.Path]::GetFileNameWithoutExtension($scriptFrame.Command)
-
-    }
-    else {
-        return 'NoName'
-    }
-}
-
-
-<#
-    .SYNOPSIS
-      Displays a deprecation warning message for a function.
-
-    .DESCRIPTION
-      The Write-PodeDeprecationWarning function generates a warning message indicating that
-      a specified function is deprecated and suggests the new replacement function.
-
-    .PARAMETER OldFunction
-      The name of the deprecated function that is being replaced.
-
-    .PARAMETER NewFunction
-      The name of the new function that should be used instead.
-
-    .OUTPUTS
-      None.
-
-    .EXAMPLE
-      Write-PodeDeprecationWarning -OldFunction "New-PodeLoggingMethod" -NewFunction "New-PodeLogger"
-
-      This will display:
-      WARNING: Function `New-PodeLoggingMethod` is deprecated. Please use 'New-PodeLogger' function instead.
-
-    .NOTES
-      Internal function for Pode.
-      Subject to change in future releases.
+    Internal function for Pode.
+    Subject to change in future releases.
 #>
 function Write-PodeDeprecationWarning {
     param (
@@ -4220,169 +4177,6 @@ function Convert-PodeSecureStringToByteArray {
         }
     }
 }
-
-<# 
-.SYNOPSIS
-    Retrieves the name of the main Pode application script.
-
-.DESCRIPTION
-    The `Get-PodeApplicationName` function determines the name of the primary script (`.ps1`)
-    that started execution. It does this by examining the PowerShell call stack and
-    extracting the first script file that appears.
-
-    If no script file is found in the call stack, the function returns `"NoName"`.
-
-.OUTPUTS
-    [string]
-    Returns the filename of the main application script, or `"NoName"` if no script is found.
-
-.EXAMPLE
-    Get-PodeApplicationName
-
-    This retrieves the name of the main script that launched the Pode application.
-
-.EXAMPLE
-    $AppName = Get-PodeApplicationName
-    Write-Host "Application Name: $AppName"
-
-    This stores the retrieved application name in a variable and prints it.
-
-.NOTES
-    - This function relies on `Get-PSCallStack`, meaning it must be run within a script execution context.
-    - If called interactively or if no `.ps1` script is in the call stack, it will return `"NoName"`.
-    - This is an internal function and may change in future releases of Pode.
-#>
-function Get-PodeApplicationName {
-    $scriptFrame = (Get-PSCallStack | Where-Object { $_.Command -match '\.ps1$' } | Select-Object -First 1)
-    if ($scriptFrame) {
-        return [System.IO.Path]::GetFileNameWithoutExtension($scriptFrame.Command)
-
-    }
-    else {
-        return 'NoName'
-    }
-}
-
-
-<#
-    .SYNOPSIS
-      Displays a deprecation warning message for a function.
-
-    .DESCRIPTION
-      The Write-PodeDeprecationWarning function generates a warning message indicating that
-      a specified function is deprecated and suggests the new replacement function.
-
-    .PARAMETER OldFunction
-      The name of the deprecated function that is being replaced.
-
-    .PARAMETER NewFunction
-      The name of the new function that should be used instead.
-
-    .OUTPUTS
-      None.
-
-    .EXAMPLE
-      Write-PodeDeprecationWarning -OldFunction "New-PodeLoggingMethod" -NewFunction "New-PodeLogger"
-
-      This will display:
-      WARNING: Function `New-PodeLoggingMethod` is deprecated. Please use 'New-PodeLogger' function instead.
-
-    .NOTES
-      Internal function for Pode.
-      Subject to change in future releases.
-#>
-function Write-PodeDeprecationWarning {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]
-        $OldFunction,
-
-        [Parameter(Mandatory = $true)]
-        [string]
-        $NewFunction
-    )
-    # WARNING: Function `New-PodeLoggingMethod` is deprecated. Please use '{0}' function instead.
-    Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f $OldFunction, $NewFunction) -ForegroundColor Yellow
-}
-
-<#
-.SYNOPSIS
-    Converts a SecureString to plain text.
-
-.DESCRIPTION
-    This function takes a SecureString input and converts it into a plain text string.
-    Supports pipeline input for seamless integration with other cmdlets.
-
-.PARAMETER SecureString
-    The SecureString that needs to be converted.
-
-.OUTPUTS
-    [string] Plain text representation of the SecureString.
-
-.NOTES
-    Internal Pode function - subject to change.
-#>
-function Convert-PodeSecureStringToPlainText {
-    [CmdletBinding()]
-    [OutputType([string])]
-    param (
-        [Parameter(Mandatory = $true, ValueFromPipeline)]
-        [securestring]$SecureString
-    )
-
-    process {
-        $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureString)
-        try {
-            [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
-        }
-        finally {
-            [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
-        }
-    }
-}
-
-<#
-.SYNOPSIS
-    Converts a SecureString to a UTF8 byte array.
-
-.DESCRIPTION
-    This function takes a SecureString input and converts it into a UTF8 encoded byte array.
-    Supports pipeline input for seamless integration with other cmdlets.
-
-.PARAMETER SecureString
-    The SecureString that needs to be converted.
-
-.OUTPUTS
-    [byte[]] A UTF8 encoded byte array representation of the SecureString.
-
-.NOTES
-    Internal Pode function - subject to change.
-#>
-function Convert-PodeSecureStringToByteArray {
-    [CmdletBinding()]
-    [OutputType([byte[]])]
-    param (
-        [Parameter(Mandatory = $true, ValueFromPipeline)]
-        [securestring]
-        $SecureString
-    )
-
-    process {
-        if ($null -ne $SecureString) {
-            $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureString)
-            try {
-                [System.Text.Encoding]::UTF8.GetBytes([Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr))
-            }
-            finally {
-                [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
-            }
-        }
-        else {
-            return [byte[]]::new(0)  # Return empty byte array instead of $null
-        }
-    }
-}
-
 
 <#
 .SYNOPSIS
