@@ -40,7 +40,7 @@ catch { throw }
 # or just:
 # Import-Module Pode
 
-$LOGGING_TYPE = 'terminal' # Terminal, File, Custom
+$LOGGING_TYPE = 'file' # Terminal, File, Custom
 
 # create a server, and start listening on port 8081
 Start-PodeServer {

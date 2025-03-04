@@ -171,9 +171,9 @@ function New-PodeLoggingMethod {
             $Path = (Protect-PodeValue -Value $Path -Default './logs')
             $Path = (Get-PodeRelativePath -Path $Path -JoinRoot)
             $null = New-Item -Path $Path -ItemType Directory -Force
-
             return @{
-                ScriptBlock = (Get-PodeLoggingFileMethod)
+                 ScriptBlock = ScriptBlock:LoggingFileMethod #(Get-PodeLoggingFileMethod)
+            #  ScriptBlock =  (Get-PodeLoggingFileMethod)
                 Batch       = $batchInfo
                 Arguments   = @{
                     Name          = $Name

@@ -17,6 +17,61 @@ function Get-PodeLoggingTerminalMethod {
     }
 }
 
+ScriptBlock script:LoggingFileMethod {
+    param($item, $options)
+    # check if it's an array from batching
+    if ($item -is [array]) {
+        $item = ($item -join [System.Environment]::NewLine)
+    }
+
+    # mask values
+    $item = ($item | Protect-PodeLogItem)
+
+    # variables
+    $date = [DateTime]::Now.ToString('yyyy-MM-dd')
+
+    # do we need to reset the fileId?
+    if ($options.Date -ine $date) {
+        $options.Date = $date
+        $options.FileId = 0
+    }
+
+    # get the fileId
+    if ($options.FileId -eq 0) {
+        $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_*.log")
+        $options.FileId = (@(Get-ChildItem -Path $path)).Length
+        if ($options.FileId -eq 0) {
+            $options.FileId = 1
+        }
+    }
+
+    $id = "$($options.FileId)".PadLeft(3, '0')
+    if ($options.MaxSize -gt 0) {
+        $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_$($id).log")
+        if ((Get-Item -Path $path -Force).Length -ge $options.MaxSize) {
+            $options.FileId++
+            $id = "$($options.FileId)".PadLeft(3, '0')
+        }
+    }
+
+    # get the file to write to
+    $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_$($id).log")
+
+    # write the item to the file
+    $item.ToString() | Out-File -FilePath $path -Encoding utf8 -Append -Force
+
+    # if set, remove log files beyond days set (ensure this is only run once a day)
+    if (($options.MaxDays -gt 0) -and ($options.NextClearDown -lt [DateTime]::Now.Date)) {
+        $date = [DateTime]::Now.Date.AddDays(-$options.MaxDays)
+
+        $null = Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
+            Where-Object { $_.CreationTime -lt $date } |
+            Remove-Item -Force
+
+        $options.NextClearDown = [DateTime]::Now.Date.AddDays(1)
+    }
+}
+
 function Get-PodeLoggingFileMethod {
     return {
         param($item, $options)

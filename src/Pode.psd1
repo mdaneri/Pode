@@ -527,7 +527,9 @@
         'New-PodeLimitRouteComponent',
         'New-PodeLimitEndpointComponent',
         'New-PodeLimitMethodComponent',
-        'New-PodeLimitHeaderComponent'
+        'New-PodeLimitHeaderComponent',
+        'Add-PodeScriptBlock',
+        'Get-PodeScriptBlockList'
     )
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
@@ -535,7 +537,7 @@
         'Enable-PodeOpenApiViewer',
         'Enable-PodeOA',
         'Get-PodeOpenApiDefinition',
-        'New-PodeOASchemaProperty'
+        'New-PodeOASchemaProperty','ScriptBlock'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
