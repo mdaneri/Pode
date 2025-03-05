@@ -56,8 +56,8 @@ Start-PodeServer -Threads 2 {
     # request logging
     New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
 
-    # setup basic auth (base64> username:password in header)
-    New-PodeAuthScheme -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+
+    ScriptBlock global:BasicAuth {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -74,8 +74,28 @@ Start-PodeServer -Threads 2 {
 
         return @{ Message = 'Invalid details supplied' }
     }
+    # setup basic auth (base64> username:password in header)
+    New-PodeAuthScheme -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock (ScriptBlock:BasicAuth)
 
-    
+    <#{
+        param($username, $password)
+
+        # here you'd check a real user storage, this is just for example
+        if ($username -eq 'morty' -and $password -eq 'pickle') {
+            return @{
+                User = @{
+                    Username = 'morty'
+                    ID       = 'M0R7Y302'
+                    Name     = 'Morty'
+                    Type     = 'Human'
+                }
+            }
+        }
+
+        return @{ Message = 'Invalid details supplied' }
+    }#>
+
+
     # POST request to get current user (since there's no session, authentication will always happen)
     Add-PodeRoute -Method Post -Path '/users' -Authentication 'Validate' -ScriptBlock {
         Write-PodeJsonResponse -Value @{

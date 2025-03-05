@@ -110,7 +110,7 @@ try {
         # append Pode.dll and mount
         Add-Type -LiteralPath "$($netFolder)/Pode.dll" -ErrorAction Stop
     }
-    . "$($root)/Public/Scriptblock.ps1"
+#    . "$($root)/Private/Scriptblock.ps1"
     # load private functions
     Get-ChildItem "$($root)/Private/*.ps1" | ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
 
@@ -125,11 +125,10 @@ try {
 
     # get functions from memory and compare to existing to find new functions added
     $funcs = Get-ChildItem Function: | Where-Object { $sysfuncs -notcontains $_ }
-    $funcs += Get-ChildItem Function:Get-PodeScriptBlockList
-    $funcs += Get-ChildItem Function:Add-PodeScriptBlock
+ #   $funcs += Get-ChildItem Function:Add-PodeScriptBlock
 
     $aliases = Get-ChildItem Alias: | Where-Object { $sysaliases -notcontains $_ }
-    $aliases += Get-ChildItem Alias:Scriptblock
+    #$aliases += Get-ChildItem Alias:Scriptblock
     # export the module's public functions
     if ($funcs) {
         if ($aliases) {

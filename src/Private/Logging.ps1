@@ -17,7 +17,7 @@ function Get-PodeLoggingTerminalMethod {
     }
 }
 
-ScriptBlock script:LoggingFileMethod {
+iScriptBlock script:LoggingFileMethod {
     param($item, $options)
     # check if it's an array from batching
     if ($item -is [array]) {
@@ -70,7 +70,7 @@ ScriptBlock script:LoggingFileMethod {
 
         $options.NextClearDown = [DateTime]::Now.Date.AddDays(1)
     }
-}
+}#>
 
 function Get-PodeLoggingFileMethod {
     return {
