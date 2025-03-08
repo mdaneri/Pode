@@ -31,7 +31,7 @@ namespace Pode
 
         // Static fields to control logging and store log entries in a thread-safe queue
         private static bool _enabled;
-        private static ConcurrentQueue<Hashtable> _queue;
+        private static ConcurrentQueue<Hashtable> _queue = new ConcurrentQueue<Hashtable>();
 
         /// <summary>
         /// Enables or disables writing logs to the console.
@@ -47,16 +47,18 @@ namespace Pode
             set
             {
                 _enabled = value;
-                if (_enabled)
-                {
-                    // Initializes the queue for logging
-                    _queue = new ConcurrentQueue<Hashtable>();
-                }
-                else
-                {
-                    // Clears the queue if logging is disabled
-                    _queue = null;
-                }
+                /*   if (!_enabled )
+                   {
+                       // Initializes the queue for logging
+                       _queue = new ConcurrentQueue<Hashtable>();
+                   }
+                   else
+                   {
+                       // Clears the queue if logging is disabled
+                       _queue = null;
+                   }
+
+                    _enabled = value;*/
             }
         }
 
@@ -71,7 +73,7 @@ namespace Pode
         /// <param name="table">The log entry as a Hashtable.</param>
         public static void Enqueue(Hashtable table)
         {
-            if (_queue != null)
+            if (_enabled && _queue != null)
             {
                 _queue.Enqueue(table);
             }
@@ -84,7 +86,7 @@ namespace Pode
         /// <returns>True if a log entry was dequeued, false otherwise.</returns>
         public static bool TryDequeue(out Hashtable table)
         {
-            if (_queue != null)
+            if (_enabled && _queue != null)
             {
                 return _queue.TryDequeue(out table);
             }
@@ -98,7 +100,7 @@ namespace Pode
         /// <returns>The dequeued log entry as a Hashtable.</returns>
         public static Hashtable Dequeue()
         {
-            if (_queue != null && _queue.TryDequeue(out Hashtable table))
+            if (_enabled && _queue != null && _queue.TryDequeue(out Hashtable table))
             {
                 return table;
             }
@@ -124,40 +126,47 @@ namespace Pode
         /// <param name="level">The logging level (default is Error).</param>
         public static void LogException(Exception ex, PodeConnector connector = default(PodeConnector), PodeLoggingLevel level = PodeLoggingLevel.Error)
         {
-            if (ex == null)
+            try
             {
-                return;
-            }
-
-            // Exit if logging is disabled or the logging level isn’t configured in the connector
-            if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
-            {
-                return;
-            }
-
-            // If Terminal logging is enabled, output exception details to the console
-            if (Terminal)
-            {
-                Console.WriteLine($"[{level}] {ex.GetType().Name}: {ex.Message}");
-                Console.WriteLine(ex.StackTrace);
-
-                if (ex.InnerException != null)
+                if (ex == null)
                 {
-                    Console.WriteLine($"[{level}] {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
-                    Console.WriteLine(ex.InnerException.StackTrace);
+                    return;
+                }
+
+                // Exit if logging is disabled or the logging level isn’t configured in the connector
+                if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
+                {
+                    return;
+                }
+
+                // If Terminal logging is enabled, output exception details to the console
+                if (Terminal)
+                {
+                    Console.WriteLine($"[{level}] {ex.GetType().Name}: {ex.Message}");
+                    Console.WriteLine(ex.StackTrace);
+
+                    if (ex.InnerException != null)
+                    {
+                        Console.WriteLine($"[{level}] {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
+                        Console.WriteLine(ex.InnerException.StackTrace);
+                    }
+                }
+
+                // Add the exception to the log queue if logging is enabled
+                if (Enabled)
+                {
+                    Hashtable logEntry = new Hashtable
+                    {
+                        ["Name"] = ListenerLogName,
+                        ["Item"] = ex
+                    };
+
+                    Enqueue(logEntry);
                 }
             }
-
-            // Add the exception to the log queue if logging is enabled
-            if (Enabled)
+            catch (Exception ex1)
             {
-                Hashtable logEntry = new Hashtable
-                {
-                    ["Name"] = ListenerLogName,
-                    ["Item"] = ex
-                };
-
-                Enqueue(logEntry);
+                Console.WriteLine(ex1.Message);
             }
         }
 
@@ -170,52 +179,59 @@ namespace Pode
         /// <param name="context">Optional PodeContext to include context ID in the log entry.</param>
         public static void LogMessage(string message, PodeConnector connector = default(PodeConnector), PodeLoggingLevel level = PodeLoggingLevel.Error, PodeContext context = default(PodeContext))
         {
-            // Exit if message is empty or whitespace
-            if (string.IsNullOrWhiteSpace(message))
+            try
             {
-                return;
-            }
-
-            // Exit if logging is disabled or the level isn’t configured in the connector
-            if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
-            {
-                return;
-            }
-
-            // If Terminal logging is enabled, output message to the console, including context ID if provided
-            if (Terminal)
-            {
-                if (context == default(PodeContext))
+                // Exit if message is empty or whitespace
+                if (string.IsNullOrWhiteSpace(message))
                 {
-                    Console.WriteLine($"[{level}]: {message}");
+                    return;
                 }
-                else
-                {
-                    Console.WriteLine($"[{level}]: [ContextId: {context.ID}] {message}");
-                }
-            }
 
-            // Add the log message to the log queue if logging is enabled
-            if (Enabled)
-            {
-                Hashtable logEntry = new Hashtable
+                // Exit if logging is disabled or the level isn’t configured in the connector
+                if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
                 {
-                    ["Name"] = ListenerLogName,
-                    ["Item"] = new Hashtable
+                    return;
+                }
+
+                // If Terminal logging is enabled, output message to the console, including context ID if provided
+                if (Terminal)
+                {
+                    if (context == default(PodeContext))
                     {
-                        ["Message"] = message,
-                        ["Level"] = level,
-                        ["ThreadId"] = Environment.CurrentManagedThreadId
+                        Console.WriteLine($"[{level}]: {message}");
                     }
-                };
-
-                // Add the context ID to the log entry if a context is provided
-                if (context != null)
-                {
-                    ((Hashtable)logEntry["Item"])["TargetObject"] = context.ID;
+                    else
+                    {
+                        Console.WriteLine($"[{level}]: [ContextId: {context.ID}] {message}");
+                    }
                 }
 
-                Enqueue(logEntry);
+                // Add the log message to the log queue if logging is enabled
+                if (Enabled)
+                {
+                    Hashtable logEntry = new Hashtable
+                    {
+                        ["Name"] = ListenerLogName,
+                        ["Item"] = new Hashtable
+                        {
+                            ["Message"] = message,
+                            ["Level"] = level,
+                            ["ThreadId"] = Environment.CurrentManagedThreadId
+                        }
+                    };
+
+                    // Add the context ID to the log entry if a context is provided
+                    if (context != null)
+                    {
+                        ((Hashtable)logEntry["Item"])["TargetObject"] = context.ID;
+                    }
+
+                    Enqueue(logEntry);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
         }
 

@@ -79,6 +79,7 @@
 [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
 param(
     [Parameter(  ParameterSetName = 'Inbuilt')]
+    [Parameter(  ParameterSetName = 'Register')]
     [int]
     $Port = 8080,
 
@@ -183,7 +184,9 @@ if ($Restart.IsPresent) {
 
 # Start the Pode server
 Start-PodeServer {
-    New-PodeLoggingMethod -File -Name 'errors' -MaxDays 4 -Path './logs' | Enable-PodeErrorLogging -Levels Informational
+    New-PodeFileLoggingMethod -Name 'errors' -MaxDays 4 -Path './logs' | Enable-PodeErrorLogging -Levels 'Error', 'Emergency', 'Alert', 'Critical', 'Warning'
+    New-PodeFileLoggingMethod -Name 'common' -MaxDays 4 -Path './logs' | Enable-PodeDefaultLogging -Levels 'Notice', 'Informational'
+
 
     # Add an HTTP endpoint listening on localhost at port 8080
     Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http

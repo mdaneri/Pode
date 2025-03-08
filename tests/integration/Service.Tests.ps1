@@ -7,13 +7,17 @@ param()
 Describe 'Service Lifecycle' {
 
     BeforeAll {
+        $helperPath = (Split-Path -Parent -Path $PSCommandPath) -ireplace 'integration', 'shared'
+        . "$helperPath/TestHelper.ps1"
+
+        $port = 8080
         $isAgent = $false
         if ($IsMacOS) {
             $isAgent = $true
         }
     }
     it 'register' {
-        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Register -Agent:$isAgent
+        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Register -Agent:$isAgent -Port $port
         $success | Should -BeTrue
         Start-Sleep 10
         $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
@@ -35,7 +39,8 @@ Describe 'Service Lifecycle' {
         $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Start -Agent:$isAgent
         $success | Should -BeTrue
         Start-Sleep 2
-        $webRequest = Invoke-WebRequest -uri http://localhost:8080 -ErrorAction SilentlyContinue
+        Wait-ForWebServer -Port $port
+        $webRequest = Invoke-WebRequest -uri "http://localhost:$port" -ErrorAction SilentlyContinue
         $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
         $status.Status | Should -Be 'Running'
         $status.Name | Should -Be 'Hello Service'
@@ -52,14 +57,14 @@ Describe 'Service Lifecycle' {
         $status.Status | Should -Be 'Suspended'
         $status.Name | Should -Be 'Hello Service'
         $status.Pid | Should -BeGreaterThan 0
-        { Invoke-WebRequest -uri http://localhost:8080 } | Should -Throw
+        { Invoke-WebRequest -uri "http://localhost:$port" } | Should -Throw
     }
 
     it  'resume' {
         $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -resume -Agent:$isAgent
         $success | Should -BeTrue
-        Start-Sleep 2
-        $webRequest = Invoke-WebRequest -uri http://localhost:8080 -ErrorAction SilentlyContinue
+        Wait-ForWebServer -Port $port
+        $webRequest = Invoke-WebRequest -uri "http://localhost:$port" -ErrorAction SilentlyContinue
         $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
         $status.Status | Should -Be 'Running'
         $status.Name | Should -Be 'Hello Service'
@@ -75,14 +80,14 @@ Describe 'Service Lifecycle' {
         $status.Name | Should -Be 'Hello Service'
         $status.Pid | Should -Be 0
 
-        { Invoke-WebRequest -uri http://localhost:8080 } | Should -Throw
+        { Invoke-WebRequest -uri "http://localhost:$port" } | Should -Throw
     }
 
     it 're-start' {
         $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Start -Agent:$isAgent
         $success | Should -BeTrue
-        Start-Sleep 2
-        $webRequest = Invoke-WebRequest -uri http://localhost:8080 -ErrorAction SilentlyContinue
+        Wait-ForWebServer -Port $port
+        $webRequest = Invoke-WebRequest -uri "http://localhost:$port" -ErrorAction SilentlyContinue
         $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
         $status.Status | Should -Be 'Running'
         $status.Name | Should -Be 'Hello Service'
@@ -101,7 +106,7 @@ Describe 'Service Lifecycle' {
         Start-Sleep 2
         $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
         $status | Should -BeNullOrEmpty
-        { Invoke-WebRequest -uri http://localhost:8080 } | Should -Throw
+        { Invoke-WebRequest -uri "http://localhost:$port" } | Should -Throw
     }
 
 }
