@@ -317,10 +317,10 @@
         'New-PodeGraylogLoggingMethod',
         'New-PodeLogInsightLoggingMethod',
         'New-PodeSplunkLoggingMethod',
+
         'Enable-PodeRequestLogging',
         'Enable-PodeErrorLogging',
         'Enable-PodeDefaultLogging',
-
         'Disable-PodeRequestLogging',
         'Disable-PodeErrorLogging',
         'Disable-PodeDefaultLogging',
@@ -336,7 +336,8 @@
         'Enable-PodeLog',
         'Disable-PodeLog',
         'Clear-PodeLogging',
-        'Get-PodeLoggingLevel',
+        'Test-PodeLoggerEnabled',
+        'Get-PodeLoggerLevel'
 
         # core
         'Start-PodeServer',
