@@ -102,6 +102,7 @@ try {
 
     # Import the module manifest to access its properties
     $PodeManifest = Import-PowerShellDataFile -Path $moduleManifestPath -ErrorAction Stop
+    $PodeManifest = Import-PowerShellDataFile -Path $moduleManifestPath -ErrorAction Stop
 
     if (! (Test-PodeAssembly)) {
         # fetch the .net version and the libs path
