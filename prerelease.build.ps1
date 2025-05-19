@@ -274,12 +274,25 @@ Add-BuildTask ProcessPRs UpdateDevelop, Create-NewBranch , Commit-VersionJson, {
                     } until ('q' , 'r' -contains $choice)
                 }
             } until ($testProcess.ExitCode -eq 0)
+            if ( Test-Path $testResultsPath) {
 
-            # Verify test results
-            [xml]$testResults = Get-Content $testResultsPath
-            if ([int]$testResults.'test-results'.failures -gt 0) {
-                Write-Output "Tests failed for PR #$($pr.number). Aborting."
-                exit 1
+                # Verify test results
+                [xml]$testResults = Get-Content $testResultsPath
+                if ([int]$testResults.'test-results'.failures -gt 0) {
+                    Write-Output "Tests failed for PR #$($pr.number). Aborting."
+                    exit 1
+                }
+            }
+            else {
+                do {
+                    Write-Output "No test results found for PR #$($pr.number).(C)ontinue running the tests or (Q)uit the process?"
+                    $choice = Read-Host
+                    if ($choice -eq 'q') { exit 1 }
+                    if ($choice -eq 'c') {
+                        Read-Host '🔄 Tests failed. Resolve the issue and press Enter to retry.'
+                        break
+                    }
+                } until ('q' , 'c' -contains $choice)
             }
         }
         # Commit the PR merge with a formatted message and check for errors
